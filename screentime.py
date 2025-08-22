@@ -5,12 +5,10 @@ import time
 import datetime
 from datetime import datetime, timedelta
 import atexit
-import pickle
+import json
 import os
 
 time_data = {}
-
-file_path = os.path.realpath(__file__)
 
 
 def get_foreground_exe():   #Get current exe
@@ -22,9 +20,12 @@ def get_foreground_exe():   #Get current exe
          return None
 
 def save_time_data():
-            with open("time_data.pickle", "wb") as f:
-                pickle.dump(time_data, f, pickle.HIGHEST_PROTOCOL)
-            print("Time data saved at"+file_path)
+    try:
+            with open("time_data.json", "w") as f:
+                json.dump(time_data, f)
+                print("Time data saved")
+    except IOError:
+        print("An IOError has occured.")
 
 
 def mainloop():
@@ -37,7 +38,7 @@ def mainloop():
 
 
     while True:
-        time.sleep(1)
+        time.sleep(5)
 
 
         new_exe = get_foreground_exe() 
@@ -61,7 +62,7 @@ def mainloop():
 
 
 def exit_handler():
-    print("Time data saved at"+file_path)
+    print("Time data saved")
     save_time_data()
 atexit.register(exit_handler)
 
