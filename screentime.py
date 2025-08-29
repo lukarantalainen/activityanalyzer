@@ -6,7 +6,7 @@ import datetime
 from datetime import date, timedelta
 import atexit
 import json
-import os
+import subprocess
 
 time_data = {}
 
@@ -63,7 +63,7 @@ def mainloop():
             last_update = now
             save_time_data()
         
-        if datetime.today() >= tomorrow_date:
+        if datetime.date.today() >= tomorrow_date:
             elapsed_time = now - start_time
             if current_exe in time_data:
                 time_data[current_exe] += elapsed_time
@@ -75,10 +75,13 @@ def mainloop():
             tomorrow_date = datetime.date.today() + timedelta(days=1)
 
 
+print("Next save at", datetime.date.today() + timedelta(days=1))
+
 
 def exit_handler():
     print("Time data saved")
     save_time_data()
+    subprocess.Popen('explorer "D:\VSCode\screentime"')
 atexit.register(exit_handler)
 
 mainloop()
