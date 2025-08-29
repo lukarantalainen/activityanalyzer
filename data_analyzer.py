@@ -31,7 +31,6 @@ def get_exe_icon(exe_path, save_path):
         bmpstr, 'raw', 'BGRX', 0, 1
     )
 
-    img = img.transpose(Image.FLIP_TOP_BOTTOM)
     img.save(save_path)
     win32gui.DestroyIcon(hicon)
 

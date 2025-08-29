@@ -50,9 +50,9 @@ def mainloop():
             current_exe = new_exe
             start_time = now
             last_update = now
-
+    
         if now - last_update >= update_interval:
-            elapsed_time = now - start_time
+            elapsed_time = now - start_time 
             if current_exe in time_data:
                 time_data[current_exe] += elapsed_time
             else:
@@ -78,9 +78,6 @@ print("Next save at", datetime.date.today() + timedelta(days=1))
 
 def exit_handler():
     save_time_data()
-    Popen('explorer "D:\VSCode\screentime"')
 atexit.register(exit_handler)
-
-print(globals())
 
 mainloop()
