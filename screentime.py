@@ -3,15 +3,15 @@ import win32gui
 import win32process
 import time
 import datetime
-from datetime import date, timedelta
+from datetime import timedelta
 import atexit
 import json
-import subprocess
+from subprocess import Popen
 
 time_data = {}
 
 
-def get_foreground_exe():   #Get current exe
+def get_foreground_exe():
     try:
         hwnd = win32gui.GetForegroundWindow()
         _, pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -29,7 +29,7 @@ def save_time_data():
 
 def mainloop():
 
-    current_exe = get_foreground_exe() #state at the end of the loop
+    current_exe = get_foreground_exe()
     start_time = time.time()
     tomorrow_date = datetime.date.today() + timedelta(1)
     update_interval = 60
@@ -41,8 +41,7 @@ def mainloop():
         now = time.time()
 
 
-        #focus change
-        if new_exe != current_exe: #if focus changes during 5 second sleep > add time and get current exe&time
+        if new_exe != current_exe:
             elapsed_time = now - start_time
             if current_exe in time_data: 
                 time_data[current_exe] += elapsed_time
@@ -52,7 +51,6 @@ def mainloop():
             start_time = now
             last_update = now
 
-        #every 60 sec update
         if now - last_update >= update_interval:
             elapsed_time = now - start_time
             if current_exe in time_data:
@@ -79,9 +77,10 @@ print("Next save at", datetime.date.today() + timedelta(days=1))
 
 
 def exit_handler():
-    print("Time data saved")
     save_time_data()
-    subprocess.Popen('explorer "D:\VSCode\screentime"')
+    Popen('explorer "D:\VSCode\screentime"')
 atexit.register(exit_handler)
+
+print(globals())
 
 mainloop()
