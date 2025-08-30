@@ -8,7 +8,9 @@ import atexit
 import json
 from subprocess import Popen
 
-time_data = {}
+time_data = {
+    
+}
 
 
 def get_foreground_exe():
@@ -31,6 +33,7 @@ def mainloop():
 
     current_exe = get_foreground_exe()
     start_time = time.time()
+    print(start_time)
     tomorrow_date = datetime.date.today() + timedelta(1)
     update_interval = 60
     last_update = 0 
@@ -44,9 +47,9 @@ def mainloop():
         if new_exe != current_exe:
             elapsed_time = now - start_time
             if current_exe in time_data: 
-                time_data[current_exe] += elapsed_time
+                time_data[current_exe] += round(elapsed_time)
             else:
-                time_data[current_exe] = elapsed_time
+                time_data[current_exe] = round(elapsed_time)
             current_exe = new_exe
             start_time = now
             last_update = now
@@ -54,9 +57,9 @@ def mainloop():
         if now - last_update >= update_interval:
             elapsed_time = now - start_time 
             if current_exe in time_data:
-                time_data[current_exe] += elapsed_time
+                time_data[current_exe] += round(elapsed_time)
             else:
-                time_data[current_exe] = elapsed_time
+                time_data[current_exe] = round(elapsed_time)
             start_time = now
             last_update = now
             save_time_data()
@@ -64,9 +67,9 @@ def mainloop():
         if datetime.date.today() >= tomorrow_date:
             elapsed_time = now - start_time
             if current_exe in time_data:
-                time_data[current_exe] += elapsed_time
+                time_data[current_exe] += round(elapsed_time)
             else:
-                time_data[current_exe] + elapsed_time
+                time_data[current_exe] + round(elapsed_time)
             save_time_data()    
             time_data.clear()
             start_time = now
@@ -74,6 +77,8 @@ def mainloop():
 
 
 print("Next save at", datetime.date.today() + timedelta(days=1))
+
+
 
 
 def exit_handler():

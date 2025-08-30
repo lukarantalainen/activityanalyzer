@@ -4,9 +4,20 @@ import os
 import win32gui
 import win32ui
 from PIL import Image
+import matplotlib.pyplot as plt
 
 with open("time_data.json") as f:
     d = json.load(f)
+    print(json.dumps(d, indent=4))
+    key = list(d.keys())
+    value = list(d.values())
+    plt.bar(key, value)
+    plt.xlabel('Applications')
+    plt.ylabel('Time Spent')
+    plt.title('Screen Time Data')
+    plt.show()
+
+
     
 def get_exe_icon(exe_path, save_path):
     large, small = win32gui.ExtractIconEx(exe_path, 0)
@@ -47,3 +58,4 @@ for exe_path in d.keys():
         get_exe_icon(exe_path, save_path)
     except Exception as e:
         print(f"Failed to get icon for {exe_path}: {e}")
+
