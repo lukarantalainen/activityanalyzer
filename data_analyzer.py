@@ -6,56 +6,75 @@ import win32ui
 from PIL import Image
 import matplotlib.pyplot as plt
 
-with open("time_data.json") as f:
-    d = json.load(f)
-    print(json.dumps(d, indent=4))
-    key = list(d.keys())
-    value = list(d.values())
-    plt.bar(key, value)
-    plt.xlabel('Applications')
-    plt.ylabel('Time Spent')
-    plt.title('Screen Time Data')
-    plt.show()
+def main():
+    with open("time_data.json") as f:
+            d = json.load(f)
+
+    with open("program_names.json") as apps:
+        program_names = json.load(apps)
+
+    def get_exe_icon(exe_path, save_path):
+        large, small = win32gui.ExtractIconEx(exe_path, 0)
+        if not large:
+            raise Exception("No icon found for {exe_path}")
+        
+        hicon = large[0]
+
+        hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
+        hbmp = win32ui.CreateBitmap()
+        hbmp.CreateCompatibleBitmap(hdc, 64, 64)
+        hdc = hdc.CreateCompatibleDC()
+        hdc.SelectObject(hbmp)
+        win32gui.DrawIconEx(hdc.GetHandleOutput(), 0, 0, hicon, 64, 64, 0, None, 0x3)
+
+        bmpinfo = hbmp.GetInfo()
+        bmpstr = hbmp.GetBitmapBits(True)
+        img = Image.frombuffer(
+            'RGB',
+            (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+            bmpstr, 'raw', 'BGRX', 0, 1
+        )
+
+        img.save(save_path)
+        win32gui.DestroyIcon(hicon)
+
+    output_dir = r"D:/VSCode/screentime/icons/"
+    os.makedirs(output_dir, exist_ok=True)
+
+    for exe_path in d.keys():
+        match = re.search(r'[\w-]+?(?=\.)', exe_path)
+        if not match:
+            continue
+        app_name = match.group()
+        save_path = os.path.join(output_dir, app_name + ".png")
+        try:
+            get_exe_icon(exe_path, save_path)
+        except Exception as e:
+            print(f"Failed to get icon for {exe_path}: {e}")
 
 
-    
-def get_exe_icon(exe_path, save_path):
-    large, small = win32gui.ExtractIconEx(exe_path, 0)
-    if not large:
-        raise Exception("No icon found for {exe_path}")
-    
-    hicon = large[0]
 
-    hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
-    hbmp = win32ui.CreateBitmap()
-    hbmp.CreateCompatibleBitmap(hdc, 64, 64)
-    hdc = hdc.CreateCompatibleDC()
-    hdc.SelectObject(hbmp)
-    win32gui.DrawIconEx(hdc.GetHandleOutput(), 0, 0, hicon, 64, 64, 0, None, 0x3)
 
-    # Convert to Pillow image
-    bmpinfo = hbmp.GetInfo()
-    bmpstr = hbmp.GetBitmapBits(True)
-    img = Image.frombuffer(
-        'RGB',
-        (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-        bmpstr, 'raw', 'BGRX', 0, 1
-    )
+    def display_data():
 
-    img.save(save_path)
-    win32gui.DestroyIcon(hicon)
+        final_data = {}
+        for key, value in d.items():
+            app = os.path.basename(key).capitalize()
+            app =  os.path.splitext(app)[0].capitalize()
+            if app in program_names:
+                app = program_names[app]
+                final_data[app] = app, 0 + round(value/60, 2)
+                print("Found in program names")
+            else:
+                final_data[app] = final_data.get(app, 0) + round(value/60, 2)
 
-output_dir = r"D:/VSCode/screentime/icons/"
-os.makedirs(output_dir, exist_ok=True)
+        keys = list(final_data.keys())
+        values = list(final_data.values())
 
-for exe_path in d.keys():
-    match = re.search(r'[\w-]+?(?=\.)', exe_path)
-    if not match:
-        continue
-    app_name = match.group()
-    save_path = os.path.join(output_dir, app_name + ".png")
-    try:
-        get_exe_icon(exe_path, save_path)
-    except Exception as e:
-        print(f"Failed to get icon for {exe_path}: {e}")
+        plt.bar(keys, values)
+        plt.xlabel('Applications')
+        plt.ylabel('Time Spent (Minutes)')
+        plt.title('Screen Time Data')
+        plt.show()
 
+    display_data()
