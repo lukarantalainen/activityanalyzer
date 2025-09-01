@@ -16,5 +16,9 @@
     "zoom": "Zoom",
     "skype": "Skype",
     "vlc": "VLC Media Player",
-    "steam": "Steam"
+    "steam": "Steam",
+    "null": "Sleep",
+    "taskmgr": "Task Manager",
+    "lockapp": "Lockscreen",
+    "cs2": "Counter-Strike 2"
 }

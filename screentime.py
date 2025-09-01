@@ -40,6 +40,7 @@ def mainloop():
     save_interval = 300
     last_update = 0 
     last_save = time.time()
+    
     keyboard.add_hotkey("ctrl+alt+shift+d", lambda: data.main())
     keyboard.add_hotkey("ctrl+alt+shift+s", lambda: save_time_data())
 

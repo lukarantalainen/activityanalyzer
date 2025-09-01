@@ -56,9 +56,13 @@ def main():
 
         final_data = {}
         for key, value in tdata.items():
-            app = os.path.basename(key).capitalize()
-            app =  os.path.splitext(app)[0].capitalize()
-            final_data[app] = final_data.get(app, 0) + round(value/60, 2)
+            app = os.path.basename(key).lower()
+            app =  os.path.splitext(app)[0].lower()
+            if app in program_names:
+                app = program_names[app]
+                final_data[app] = final_data.get(app, 0) + round(value/60, 2)
+            else:
+                final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
 
         keys = list(final_data.keys())
         values = list(final_data.values())
@@ -70,3 +74,4 @@ def main():
         plt.show()
 
     display_data()
+main()
