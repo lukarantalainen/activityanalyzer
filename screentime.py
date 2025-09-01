@@ -8,6 +8,7 @@ import atexit
 import json
 from subprocess import Popen
 import data_analyzer as data
+import keyboard
 
 time_data = {
     
@@ -36,7 +37,11 @@ def mainloop():
     start_time = time.time()
     tomorrow_date = datetime.date.today() + timedelta(1)
     update_interval = 60
+    save_interval = 300
     last_update = 0 
+    last_save = time.time()
+    keyboard.add_hotkey("ctrl+alt+shift+d", lambda: data.main())
+    keyboard.add_hotkey("ctrl+alt+shift+s", lambda: save_time_data())
 
     while True:
         time.sleep(5)
@@ -62,7 +67,10 @@ def mainloop():
                 time_data[current_exe] = round(elapsed_time)
             start_time = now
             last_update = now
+
+        if now - last_save >= save_interval:
             save_time_data()
+            last_save = now
         
         if datetime.date.today() >= tomorrow_date:
             elapsed_time = now - start_time
@@ -76,13 +84,14 @@ def mainloop():
             tomorrow_date = datetime.date.today() + timedelta(days=1)
 
 
+
+
 print("Next save at", datetime.date.today() + timedelta(days=1))
 
 
 
 
 def exit_handler():
-    save_time_data()
     data.main()
 atexit.register(exit_handler)
 

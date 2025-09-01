@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def main():
     with open("time_data.json") as f:
-            d = json.load(f)
+            tdata = json.load(f)
 
     with open("program_names.json") as apps:
         program_names = json.load(apps)
@@ -41,7 +41,7 @@ def main():
     output_dir = r"D:/VSCode/screentime/icons/"
     os.makedirs(output_dir, exist_ok=True)
 
-    for exe_path in d.keys():
+    for exe_path in tdata.keys():
         match = re.search(r'[\w-]+?(?=\.)', exe_path)
         if not match:
             continue
@@ -52,21 +52,13 @@ def main():
         except Exception as e:
             print(f"Failed to get icon for {exe_path}: {e}")
 
-
-
-
     def display_data():
 
         final_data = {}
-        for key, value in d.items():
+        for key, value in tdata.items():
             app = os.path.basename(key).capitalize()
             app =  os.path.splitext(app)[0].capitalize()
-            if app in program_names:
-                app = program_names[app]
-                final_data[app] = app, 0 + round(value/60, 2)
-                print("Found in program names")
-            else:
-                final_data[app] = final_data.get(app, 0) + round(value/60, 2)
+            final_data[app] = final_data.get(app, 0) + round(value/60, 2)
 
         keys = list(final_data.keys())
         values = list(final_data.values())
