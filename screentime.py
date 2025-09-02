@@ -1,7 +1,5 @@
 import ctypes
 import psutil
-import win32gui
-import win32process
 import time
 import datetime
 from datetime import timedelta
