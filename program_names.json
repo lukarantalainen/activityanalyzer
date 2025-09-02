@@ -20,5 +20,7 @@
     "null": "Sleep",
     "taskmgr": "Task Manager",
     "lockapp": "Lockscreen",
-    "cs2": "Counter-Strike 2"
+    "cs2": "Counter-Strike 2",
+    "steamwebhelper": "Steam overlay",
+    "explorer": "File Explorer"
 }

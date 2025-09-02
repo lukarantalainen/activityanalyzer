@@ -74,4 +74,3 @@ def main():
         plt.show()
 
     display_data()
-main()
