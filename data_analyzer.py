@@ -7,8 +7,11 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 def main():
-    with open("time_data.json") as f:
+    try:
+        with open("time_data.json") as f:
             tdata = json.load(f)
+    except IOError:
+        print("An IOError has occured.")
 
     with open("program_names.json") as apps:
         program_names = json.load(apps)
@@ -39,7 +42,10 @@ def main():
         win32gui.DestroyIcon(hicon)
 
     output_dir = r"D:/VSCode/screentime/icons/"
-    os.makedirs(output_dir, exist_ok=True)
+    try:
+        os.makedirs(output_dir, exist_ok=True)
+    except IOError:
+        print("An IOError has occured.")
 
     for exe_path in tdata.keys():
         match = re.search(r'[\w-]+?(?=\.)', exe_path)
@@ -74,4 +80,3 @@ def main():
         plt.show()
 
     display_data()
-main()
