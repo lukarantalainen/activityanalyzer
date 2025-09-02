@@ -1,3 +1,4 @@
+import ctypes
 import psutil
 import win32gui
 import win32process
@@ -9,6 +10,7 @@ import json
 from subprocess import Popen
 import data_analyzer as data
 import keyboard
+import os
 
 time_data = {
     
@@ -17,9 +19,10 @@ time_data = {
 
 def get_foreground_exe():
     try:
-        hwnd = win32gui.GetForegroundWindow()
-        _, pid = win32process.GetWindowThreadProcessId(hwnd)
-        return psutil.Process(pid).exe()
+        hwnd = ctypes.windll.user32.GetForegroundWindow()
+        pid = ctypes.wintypes.DWORD()
+        ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        return psutil.Process(pid.value).exe()
     except Exception:
          return None
 
@@ -29,6 +32,10 @@ def save_time_data():
                 json.dump(time_data, f)
     except IOError:
         print("An IOError has occured.")
+    if not os.path.exists("time_data.json"):
+        with open("time_data.json", "w") as f:
+            json.dump({}, f)
+
 
 
 def mainloop():
@@ -83,7 +90,6 @@ def mainloop():
             time_data.clear()
             start_time = now
             tomorrow_date = datetime.date.today() + timedelta(days=1)
-
 
 
 

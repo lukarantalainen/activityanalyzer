@@ -7,11 +7,13 @@ from PIL import Image
 import matplotlib.pyplot as plt
 
 def main():
-    try:
-        with open("time_data.json") as f:
+    
+    if not os.path.exists("time_data.json"):
+        with open("time_data.json", "w") as f:
+            json.dump({}, f)
+
+    with open("time_data.json") as f:
             tdata = json.load(f)
-    except IOError:
-        print("An IOError has occured.")
 
     with open("program_names.json") as apps:
         program_names = json.load(apps)
@@ -42,10 +44,7 @@ def main():
         win32gui.DestroyIcon(hicon)
 
     output_dir = r"D:/VSCode/screentime/icons/"
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-    except IOError:
-        print("An IOError has occured.")
+    os.makedirs(output_dir, exist_ok=True)
 
     for exe_path in tdata.keys():
         match = re.search(r'[\w-]+?(?=\.)', exe_path)
@@ -53,10 +52,8 @@ def main():
             continue
         app_name = match.group()
         save_path = os.path.join(output_dir, app_name + ".png")
-        try:
-            get_exe_icon(exe_path, save_path)
-        except Exception as e:
-            print(f"Failed to get icon for {exe_path}: {e}")
+        get_exe_icon(exe_path, save_path)
+
 
     def display_data():
 
