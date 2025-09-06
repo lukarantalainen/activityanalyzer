@@ -14,6 +14,10 @@ import socket
 
 time_data = {}
 
+if not os.path.exists("time_data.json"):
+    with open("time_data.json", "w") as f:
+        json.dump({}, f)
+
 with open("time_data.json") as f:
     try:
         time_data = json.load(f)
@@ -35,9 +39,7 @@ def save_time_data():
                 json.dump(time_data, f)
     except IOError:
         print("An IOError has occured.")
-    if not os.path.exists("time_data.json"):
-        with open("time_data.json", "w") as f:
-            json.dump({}, f)
+
 
 def reset_data():
     time_data.clear()
@@ -76,8 +78,12 @@ def mainloop():
             json.dump(user_data, f)
 
     save_user_data()
+
+    def show_data():
+        save_time_data()
+        data.main()
     
-    keyboard.add_hotkey("ctrl+alt+shift+d", lambda: data.main())
+    keyboard.add_hotkey("ctrl+alt+shift+d", lambda: show_data())
     keyboard.add_hotkey("ctrl+alt+shift+s", lambda: save_time_data())
     keyboard.add_hotkey("ctrl+alt+shift+r", lambda: reset_data())
 

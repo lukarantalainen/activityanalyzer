@@ -82,7 +82,6 @@ def main():
         plt.ylabel('Time Spent (Minutes)')
         plt.title('Screen Time Data')
         plt.savefig("data.png")
-        plt.show()
         plt.close()
         img = Image.open("D:/VSCode/screentime/data.png")
         img.show()
