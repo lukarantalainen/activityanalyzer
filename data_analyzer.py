@@ -6,6 +6,7 @@ import win32gui
 import win32ui
 from PIL import Image
 import matplotlib.pyplot as plt
+import time
 
 def main():
     
@@ -79,5 +80,7 @@ def main():
         plt.close()
         img = Image.open("D:/VSCode/screentime/data.png")
         img.show()
+        time.sleep(5)
+        exit()
 
     display_data()

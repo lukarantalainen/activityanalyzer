@@ -11,6 +11,9 @@ from subprocess import Popen
 import data_analyzer as data
 import keyboard
 import os
+import socket
+
+
 
 time_data = {}
 
@@ -20,7 +23,6 @@ with open("time_data.json") as f:
     except Exception as e:
         print(e)
 
-today_date = datetime.date.today()
 
 
 def get_foreground_exe():
@@ -42,21 +44,44 @@ def save_time_data():
         with open("time_data.json", "w") as f:
             json.dump({}, f)
 
-def reset_time_data():
+def reset_data():
     time_data.clear()
 
 def mainloop():
+
+    with open("user_data.json") as f:
+        saved_data = json.load(f)
+    last_date = saved_data.get("current_date")
     current_exe = get_foreground_exe()
     start_time = time.time()
+
+    current_date = datetime.date.today()
+    date_str = current_date.strftime("%d/%m/%Y")
+
     tomorrow_date = datetime.date.today() + timedelta(1)
+    tomorrowdatestr = tomorrow_date.strftime("%d/%m/%y")
+
     update_interval = 60
     save_interval = 300
     last_update = 0 
     last_save = time.time()
+
+    host_name = socket.gethostname()
+    ip_address = socket.gethostbyname(host_name)
+
+    user_data = {
+        "current_date": date_str,
+        "ip_address": ip_address,
+    
+}
+    
+    with open("user_data.json", "w") as f:
+        json.dump(user_data, f)
+
     
     keyboard.add_hotkey("ctrl+alt+shift+d", lambda: data.main())
     keyboard.add_hotkey("ctrl+alt+shift+s", lambda: save_time_data())
-    keyboard.add_hotkey("ctrl+alt+shift+r", lambda: reset_time_data())
+    keyboard.add_hotkey("ctrl+alt+shift+r", lambda: reset_data())
 
     while True:
         time.sleep(5)
@@ -87,7 +112,7 @@ def mainloop():
             save_time_data()
             last_save = now
         
-        if datetime.date.today() >= tomorrow_date:
+        if datetime.date.today() >= tomorrow_date or last_date >= tomorrowdatestr:
             elapsed_time = now - start_time
             if current_exe in time_data:
                 time_data[current_exe] += round(elapsed_time)
@@ -96,6 +121,9 @@ def mainloop():
             save_time_data()
             time_data.clear()
             start_time = now
+            last_date = datetime.date.today()
+            current_date = datetime.date.today()
+            date_str = current_date.strftime("%d/%m/%Y")
             tomorrow_date = datetime.date.today() + timedelta(days=1)
 
         
