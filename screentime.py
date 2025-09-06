@@ -12,8 +12,16 @@ import data_analyzer as data
 import keyboard
 import os
 
+time_data = {}
+
 with open("time_data.json") as f:
-    time_data = json.load(f)
+    try:
+        time_data = json.load(f)
+    except Exception as e:
+        print(e)
+
+today_date = datetime.date.today()
+
 
 def get_foreground_exe():
     try:
