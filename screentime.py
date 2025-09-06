@@ -1,13 +1,10 @@
 import ctypes
-from ctypes import Structure, windll, c_uint, sizeof, byref
-import win32api
 import psutil
 import time
 import datetime
 from datetime import timedelta
 import atexit
 import json
-from subprocess import Popen
 import data_analyzer as data
 import keyboard
 import os
@@ -22,8 +19,6 @@ with open("time_data.json") as f:
         time_data = json.load(f)
     except Exception as e:
         print(e)
-
-
 
 def get_foreground_exe():
     try:
@@ -50,13 +45,15 @@ def reset_data():
 def mainloop():
 
     with open("user_data.json") as f:
-        saved_data = json.load(f)
-    last_date = saved_data.get("current_date")
+        user_data = json.load(f)
+    last_date = user_data.get("current_date")
     current_exe = get_foreground_exe()
     start_time = time.time()
 
-    current_date = datetime.date.today()
-    date_str = current_date.strftime("%d/%m/%Y")
+    def get_date_str():
+        current_date = datetime.date.today()
+        date_str = current_date.strftime("%d/%m/%Y")
+        return date_str
 
     tomorrow_date = datetime.date.today() + timedelta(1)
     tomorrowdatestr = tomorrow_date.strftime("%d/%m/%y")
@@ -70,14 +67,15 @@ def mainloop():
     ip_address = socket.gethostbyname(host_name)
 
     user_data = {
-        "current_date": date_str,
+        "current_date": get_date_str(),
         "ip_address": ip_address,
     
 }
-    
-    with open("user_data.json", "w") as f:
-        json.dump(user_data, f)
+    def save_user_data():
+        with open("user_data.json", "w") as f:
+            json.dump(user_data, f)
 
+    save_user_data()
     
     keyboard.add_hotkey("ctrl+alt+shift+d", lambda: data.main())
     keyboard.add_hotkey("ctrl+alt+shift+s", lambda: save_time_data())
@@ -87,7 +85,6 @@ def mainloop():
         time.sleep(5)
         new_exe = get_foreground_exe()
         now = time.time()
-
 
         if new_exe != current_exe:
             elapsed_time = now - start_time
@@ -118,12 +115,14 @@ def mainloop():
                 time_data[current_exe] += round(elapsed_time)
             else:
                 time_data[current_exe] + round(elapsed_time)
+            
+            last_date = get_date_str()
+            save_user_data()
+
             save_time_data()
             time_data.clear()
             start_time = now
-            last_date = datetime.date.today()
-            current_date = datetime.date.today()
-            date_str = current_date.strftime("%d/%m/%Y")
+
             tomorrow_date = datetime.date.today() + timedelta(days=1)
 
         
@@ -137,6 +136,7 @@ print("Next save at", datetime.date.today() + timedelta(days=1))
 def exit_handler():
     save_time_data()
     data.main()
+    return None
 atexit.register(exit_handler)
 
 mainloop()
