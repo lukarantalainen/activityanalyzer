@@ -56,13 +56,7 @@ def main():
         save_path = os.path.join(output_dir, app_name + ".png")
         get_exe_icon(exe_path, save_path)
 
-    def exit_countdown():
-        n = 5
-        while n>0:
-            print("Exiting in", n, "seconds.")
-            n-=1
-            time.sleep(1)
-
+    
 
     def display_data():
 
@@ -79,16 +73,27 @@ def main():
         keys = list(final_data.keys())
         values = list(final_data.values())
 
+
+        fig, ax = plt.subplots()
         plt.bar(keys, values)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=15, ha="right")
+        fig.subplots_adjust(left=0.15, bottom=0.18, right=0.97)
         plt.xlabel('Applications')
         plt.ylabel('Time Spent (Minutes)')
         plt.title('Screen Time Data')
         plt.savefig("data.png")
+        plt.show()
         plt.close()
         img = Image.open("D:/VSCode/screentime/data.png")
         img.show()
-        exit_countdown()
-        time.sleep(5)
-        raise SystemExit
-
+        
+        
     display_data()
+        
+def exit_countdown():
+        n = 5
+        while n>0:
+            print("Exiting in", n, "seconds..")
+            n-=1
+            time.sleep(1)
+        raise SystemExit

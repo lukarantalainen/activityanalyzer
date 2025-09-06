@@ -136,6 +136,7 @@ print("Next save at", datetime.date.today() + timedelta(days=1))
 def exit_handler():
     save_time_data()
     data.main()
+    data.exit_countdown()
     return None
 atexit.register(exit_handler)
 
