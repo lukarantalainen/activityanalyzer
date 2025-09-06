@@ -1,4 +1,6 @@
 import ctypes
+from ctypes import Structure, windll, c_uint, sizeof, byref
+import win32api
 import psutil
 import time
 import datetime
@@ -10,10 +12,8 @@ import data_analyzer as data
 import keyboard
 import os
 
-time_data = {
-    
-}
-
+with open("time_data.json") as f:
+    time_data = json.load(f)
 
 def get_foreground_exe():
     try:
@@ -34,10 +34,10 @@ def save_time_data():
         with open("time_data.json", "w") as f:
             json.dump({}, f)
 
-
+def reset_time_data():
+    time_data.clear()
 
 def mainloop():
-
     current_exe = get_foreground_exe()
     start_time = time.time()
     tomorrow_date = datetime.date.today() + timedelta(1)
@@ -48,6 +48,7 @@ def mainloop():
     
     keyboard.add_hotkey("ctrl+alt+shift+d", lambda: data.main())
     keyboard.add_hotkey("ctrl+alt+shift+s", lambda: save_time_data())
+    keyboard.add_hotkey("ctrl+alt+shift+r", lambda: reset_time_data())
 
     while True:
         time.sleep(5)
@@ -84,11 +85,12 @@ def mainloop():
                 time_data[current_exe] += round(elapsed_time)
             else:
                 time_data[current_exe] + round(elapsed_time)
-            save_time_data()    
+            save_time_data()
             time_data.clear()
             start_time = now
             tomorrow_date = datetime.date.today() + timedelta(days=1)
 
+        
 
 
 print("Next save at", datetime.date.today() + timedelta(days=1))
@@ -97,6 +99,7 @@ print("Next save at", datetime.date.today() + timedelta(days=1))
 
 
 def exit_handler():
+    save_time_data()
     data.main()
 atexit.register(exit_handler)
 

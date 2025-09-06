@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import re
 import os
 import win32gui
@@ -21,7 +22,7 @@ def main():
     def get_exe_icon(exe_path, save_path):
         large, small = win32gui.ExtractIconEx(exe_path, 0)
         if not large:
-            raise Exception("No icon found for {exe_path}")
+            return None
         
         hicon = large[0]
 
@@ -74,6 +75,9 @@ def main():
         plt.xlabel('Applications')
         plt.ylabel('Time Spent (Minutes)')
         plt.title('Screen Time Data')
-        plt.show()
+        plt.savefig("data.png")
+        plt.close()
+        img = Image.open("D:/VSCode/screentime/data.png")
+        img.show()
 
     display_data()
