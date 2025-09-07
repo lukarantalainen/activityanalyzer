@@ -8,4 +8,5 @@
 *.pickle
 *.png
 icons/
+venv/
 !program_names.json

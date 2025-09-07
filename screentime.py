@@ -9,8 +9,7 @@ import data_analyzer as data
 import keyboard
 import os
 import socket
-
-
+import mouse
 
 time_data = {}
 
@@ -37,32 +36,52 @@ def save_time_data():
     try:
             with open("time_data.json", "w") as f:
                 json.dump(time_data, f)
+            print("Time data succesfully saved!")
     except IOError:
         print("An IOError has occured.")
-
 
 def reset_data():
     time_data.clear()
 
 def mainloop():
 
-    with open("user_data.json") as f:
-        user_data = json.load(f)
-    last_date = user_data.get("current_date")
     current_exe = get_foreground_exe()
     start_time = time.time()
+
+    with open("user_data.json", "r") as f:
+        user_data = json.load(f)
 
     def get_date_str():
         current_date = datetime.date.today()
         date_str = current_date.strftime("%d/%m/%Y")
         return date_str
+    
+    def get_tomorrow_date():
+        tomorrow_date = datetime.date.today() + timedelta(1)
+        tomorrowdatestr = tomorrow_date.strftime("%d/%m/%y")
+        return tomorrowdatestr
 
-    tomorrow_date = datetime.date.today() + timedelta(1)
-    tomorrowdatestr = tomorrow_date.strftime("%d/%m/%y")
+    def save_user_data():
+        with open("user_data.json", "w") as f:
+            json.dump(user_data, f)
+
+
+    def check_date():
+        last_date = user_data.get("current_date")
+        if get_date_str() > last_date:
+
+            save_user_data()
+            time_data.clear()
+
+            with open("time_data.json", "w") as f:
+                json.dump({}, f)
+
+    check_date()
+    save_user_data()
 
     update_interval = 60
     save_interval = 300
-    last_update = 0 
+    last_update = 0
     last_save = time.time()
 
     host_name = socket.gethostname()
@@ -73,24 +92,19 @@ def mainloop():
         "ip_address": ip_address,
     
 }
-    def save_user_data():
-        with open("user_data.json", "w") as f:
-            json.dump(user_data, f)
-
-    save_user_data()
-
+    
     def show_data():
         save_time_data()
         data.main()
     
     keyboard.add_hotkey("ctrl+alt+shift+d", lambda: show_data())
-    keyboard.add_hotkey("ctrl+alt+shift+s", lambda: save_time_data())
     keyboard.add_hotkey("ctrl+alt+shift+r", lambda: reset_data())
 
     while True:
         time.sleep(5)
         new_exe = get_foreground_exe()
         now = time.time()
+        check_date()
 
         if new_exe != current_exe:
             elapsed_time = now - start_time
@@ -114,22 +128,12 @@ def mainloop():
         if now - last_save >= save_interval:
             save_time_data()
             last_save = now
+
+
+
+
+
         
-        if datetime.date.today() >= tomorrow_date or last_date >= tomorrowdatestr:
-            elapsed_time = now - start_time
-            if current_exe in time_data:
-                time_data[current_exe] += round(elapsed_time)
-            else:
-                time_data[current_exe] + round(elapsed_time)
-            
-            last_date = get_date_str()
-            save_user_data()
-
-            save_time_data()
-            time_data.clear()
-            start_time = now
-
-            tomorrow_date = datetime.date.today() + timedelta(days=1)
 
         
 
