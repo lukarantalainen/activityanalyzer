@@ -6,6 +6,8 @@ from datetime import timedelta
 import atexit
 import json
 import data_analyzer as data
+import matplotlib.pyplot as plt
+from PIL import Image
 import keyboard
 import os
 import socket
@@ -23,6 +25,13 @@ with open("time_data.json") as f:
     except Exception as e:
         print(e)
 
+print(time_data)
+
+
+
+with open("program_names.json") as apps:
+    program_names = json.load(apps)
+
 def get_foreground_exe():
     try:
         hwnd = ctypes.windll.user32.GetForegroundWindow()
@@ -37,6 +46,7 @@ def save_time_data():
             with open("time_data.json", "w") as f:
                 json.dump(time_data, f)
             print("Time data succesfully saved!")
+            print(time_data)
     except IOError:
         print("An IOError has occured.")
 
@@ -44,9 +54,46 @@ def reset_data():
     time_data.clear()
 
 def mainloop():
+    def display_data():
 
+        final_data = {}
+        for key, value in time_data.items():
+            app = os.path.basename(key).lower()
+            app =  os.path.splitext(app)[0].lower()
+            if app in program_names:
+                app = program_names[app]
+                final_data[app] = final_data.get(app, 0) + round(value/60, 2)
+            else:
+                final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
+
+        keys = list(final_data.keys())
+        values = list(final_data.values())
+
+        plt.clf()
+        fig, ax = plt.subplots()
+        plt.bar(keys, values)
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=15, ha="right")
+        fig.subplots_adjust(left=0.15, bottom=0.18, right=0.97)
+        plt.xlabel('Applications')
+        plt.ylabel('Time Spent (Minutes)')
+        plt.title('Screen Time Data')
+        plt.savefig("data.png")
+        plt.ion()
+        plt.pause(0.1)
+        plt.draw()
+        plt.show()
+    
+    
+   
+    display_data()
+    gather_data() 
+
+        
+def gather_data():
     current_exe = get_foreground_exe()
     start_time = time.time()
+
+    
 
     with open("user_data.json", "r") as f:
         user_data = json.load(f)
@@ -77,7 +124,7 @@ def mainloop():
                 json.dump({}, f)
 
     check_date()
-    save_user_data()
+    
 
     update_interval = 60
     save_interval = 300
@@ -85,19 +132,18 @@ def mainloop():
     last_save = time.time()
 
     host_name = socket.gethostname()
-    ip_address = socket.gethostbyname(host_name)
+    ip_address = socket.gethostbyname(socket.getfqdn(host_name))
 
     user_data = {
         "current_date": get_date_str(),
         "ip_address": ip_address,
-    
 }
+    save_user_data()
     
     def show_data():
         save_time_data()
-        data.main()
     
-    keyboard.add_hotkey("ctrl+alt+shift+d", lambda: show_data())
+    keyboard.add_hotkey("ctrl+alt+shift+d", lambda: save_time_data())
     keyboard.add_hotkey("ctrl+alt+shift+r", lambda: reset_data())
 
     while True:
@@ -105,6 +151,7 @@ def mainloop():
         new_exe = get_foreground_exe()
         now = time.time()
         check_date()
+        save_time_data()
 
         if new_exe != current_exe:
             elapsed_time = now - start_time
@@ -133,10 +180,7 @@ def mainloop():
 
 
 
-        
-
-        
-
+            
 
 print("Next save at", datetime.date.today() + timedelta(days=1))
 

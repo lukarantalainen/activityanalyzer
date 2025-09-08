@@ -5,7 +5,6 @@ import os
 import win32gui
 import win32ui
 from PIL import Image
-import matplotlib.pyplot as plt
 import time
 
 def main():
@@ -17,8 +16,6 @@ def main():
     with open("time_data.json") as f:
             tdata = json.load(f)
 
-    with open("program_names.json") as apps:
-        program_names = json.load(apps)
 
     def get_exe_icon(exe_path, save_path):
         large, small = win32gui.ExtractIconEx(exe_path, 0)
@@ -58,37 +55,6 @@ def main():
 
     
 
-    def display_data():
-
-        final_data = {}
-        for key, value in tdata.items():
-            app = os.path.basename(key).lower()
-            app =  os.path.splitext(app)[0].lower()
-            if app in program_names:
-                app = program_names[app]
-                final_data[app] = final_data.get(app, 0) + round(value/60, 2)
-            else:
-                final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
-
-        keys = list(final_data.keys())
-        values = list(final_data.values())
-
-
-        fig, ax = plt.subplots()
-        plt.bar(keys, values)
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=15, ha="right")
-        fig.subplots_adjust(left=0.15, bottom=0.18, right=0.97)
-        plt.xlabel('Applications')
-        plt.ylabel('Time Spent (Minutes)')
-        plt.title('Screen Time Data')
-        plt.savefig("data.png")
-        plt.close()
-        img = Image.open("D:/VSCode/screentime/data.png")
-        img.show()
-        
-        
-    display_data()
-        
 def exit_countdown():
         n = 5
         while n>0:
