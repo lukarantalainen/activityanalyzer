@@ -52,13 +52,3 @@ def main():
         app_name = match.group()
         save_path = os.path.join(output_dir, app_name + ".png")
         get_exe_icon(exe_path, save_path)
-
-    
-
-def exit_countdown():
-        n = 5
-        while n>0:
-            print("Exiting in", n, "seconds..")
-            n-=1
-            time.sleep(1)
-        raise SystemExit

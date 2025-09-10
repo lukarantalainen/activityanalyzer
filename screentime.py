@@ -6,7 +6,9 @@ from datetime import timedelta
 import atexit
 import json
 import data_analyzer as data
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from tkinter import *
+from matplotlib.backends.backend_tkagg import(FigureCanvasTkAgg, NavigationToolbar2Tk)
 from PIL import Image
 import keyboard
 import os
@@ -45,9 +47,25 @@ def save_time_data():
     except IOError:
         print("An IOError has occured.")
 
-def display_data():
+# def plot():
+#     save_time_data()
+#     final_data = {}
+    
+#     fig = Figure(figsize = (5, 5),
+#                  dpi = 100)
+    
+#     fig.add_subplot(1, 1, 1)
+#     plot(keys, values)
+
+window = Tk()
+window.title("Screentime")
+window.geometry("500x500")
+
+
+
+def plot():
     save_time_data()
-    final_data = {}
+    final_data  = {}
     for key, value in time_data.items():
         app = os.path.basename(key).lower()
         app =  os.path.splitext(app)[0].lower()
@@ -60,30 +78,55 @@ def display_data():
     keys = list(final_data.keys())
     values = list(final_data.values())
 
-    fig, ax = plt.subplots()
-    plt.bar(keys, values)
-    plt.setp(ax.xaxis.get_majorticklabels(), rotation=15, ha="right")
-    fig.subplots_adjust(left=0.15, bottom=0.18, right=0.97)
-    plt.xlabel('Applications')
-    plt.ylabel('Time Spent (Minutes)')
-    plt.title('Screen Time Data')
-    plt.savefig("data.png")
-    plt.draw()
-    plt.show()
-    plt.pause(0.01)
+    fig = Figure(figsize=(5,5),
+                 dpi = 100)
+    plot1 = fig.add_subplot()
+    
+    plot1.plot(keys,values)
+    
+    canvas = FigureCanvasTkAgg(fig, master = window)
+
+    canvas.draw()
+    
+    canvas.get_tk_widget().pack()
+    
+    toolbar = NavigationToolbar2Tk(canvas, window)
+    
+    toolbar.update()
+    
+    canvas.get_tk_widget().pack()
+
+    
+
+
+
+plot_button = Button(master = window,
+                    height = 2,
+                    width = 10,
+                    text  = "Plot",
+                    command = plot)
+
+plot_button.pack(side=LEFT)
+
+window.mainloop()
+
+
+
+
+    
+
+
+    
 
 def mainloop():
 
-    
-    
-   
     gather_data() 
 
         
 def gather_data():
     current_exe = get_foreground_exe()
     start_time = time.time()
-
+    
     
 
     with open("user_data.json", "r") as f:
@@ -113,8 +156,11 @@ def gather_data():
 
             with open("time_data.json", "w") as f:
                 json.dump({}, f)
+                
 
     check_date()
+
+    
     
 
     update_interval = 60
@@ -129,16 +175,13 @@ def gather_data():
         "current_date": get_date_str(),
 }
     save_user_data()
-    
-    keyboard.add_hotkey("ctrl+alt+shift+d", lambda: save_time_data())
 
     while True:
         time.sleep(5)
         new_exe = get_foreground_exe()
         now = time.time()
         check_date()
-        save_time_data()
-        display_data()
+        plot()
 
         if new_exe != current_exe:
             elapsed_time = now - start_time
@@ -178,8 +221,6 @@ print("Next save at", datetime.date.today() + timedelta(days=1))
 
 def exit_handler():
     save_time_data()
-    data.main()
-    data.exit_countdown()
     return None
 atexit.register(exit_handler)
 
