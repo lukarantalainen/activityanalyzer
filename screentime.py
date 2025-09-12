@@ -14,6 +14,7 @@ import keyboard
 import os
 import socket
 import mouse
+import threading
 
 time_data = {}
 
@@ -47,85 +48,64 @@ def save_time_data():
     except IOError:
         print("An IOError has occured.")
 
-# def plot():
-#     save_time_data()
-#     final_data = {}
-    
-#     fig = Figure(figsize = (5, 5),
-#                  dpi = 100)
-    
-#     fig.add_subplot(1, 1, 1)
-#     plot(keys, values)
+def tkinter_window():
+    window = Tk()
+    window.title("Screentime")
+    window.geometry("500x500")
 
-window = Tk()
-window.title("Screentime")
-window.geometry("500x500")
+    def plot():
+        save_time_data()
+        final_data  = {}
+        with open("time_data.json", "r") as f:
+            time_data = json.load(f)
+        for key, value in time_data.items():
+            app = os.path.basename(key).lower()
+            app =  os.path.splitext(app)[0].lower()
+            if app in program_names:
+                app = program_names[app]
+                final_data[app] = final_data.get(app, 0) + round(value/60, 2)
+            else:
+                final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
 
+        keys = list(final_data.keys())
+        values = list(final_data.values())
 
+        fig = Figure(figsize=(5,5),
+                    dpi = 100)
+        plot1 = fig.add_subplot()
+        
+        plot1.bar(keys,values)
+        
+        canvas = FigureCanvasTkAgg(fig, master = window)
 
-def plot():
-    save_time_data()
-    final_data  = {}
-    for key, value in time_data.items():
-        app = os.path.basename(key).lower()
-        app =  os.path.splitext(app)[0].lower()
-        if app in program_names:
-            app = program_names[app]
-            final_data[app] = final_data.get(app, 0) + round(value/60, 2)
-        else:
-            final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
+        canvas.draw()
+        
+        canvas.get_tk_widget().pack()
+        
+        toolbar = NavigationToolbar2Tk(canvas, window)
+        
+        toolbar.update()
+        
+        canvas.get_tk_widget().pack()
 
-    keys = list(final_data.keys())
-    values = list(final_data.values())
-
-    fig = Figure(figsize=(5,5),
-                 dpi = 100)
-    plot1 = fig.add_subplot()
-    
-    plot1.plot(keys,values)
-    
-    canvas = FigureCanvasTkAgg(fig, master = window)
-
-    canvas.draw()
-    
-    canvas.get_tk_widget().pack()
-    
-    toolbar = NavigationToolbar2Tk(canvas, window)
-    
-    toolbar.update()
-    
-    canvas.get_tk_widget().pack()
-
-    
+        
 
 
 
-plot_button = Button(master = window,
-                    height = 2,
-                    width = 10,
-                    text  = "Plot",
-                    command = plot)
+    plot_button = Button(master = window,
+                        height = 2,
+                        width = 10,
+                        text  = "Plot",
+                        command = plot)
 
-plot_button.pack(side=LEFT)
+    plot_button.pack(side=LEFT)
 
-window.mainloop()
+    window.mainloop()
 
-
-
-
-    
-
-
-    
-
-def mainloop():
-
-    gather_data() 
 
         
 def gather_data():
-    current_exe = get_foreground_exe()
-    start_time = time.time()
+    
     
     
 
@@ -163,10 +143,7 @@ def gather_data():
     
     
 
-    update_interval = 60
-    save_interval = 300
-    last_update = 0
-    last_save = time.time()
+ 
 
     host_name = socket.gethostname()
     ip_address = socket.gethostbyname(host_name)
@@ -175,53 +152,56 @@ def gather_data():
         "current_date": get_date_str(),
 }
     save_user_data()
-
-    while True:
-        time.sleep(5)
-        new_exe = get_foreground_exe()
-        now = time.time()
-        check_date()
-        plot()
-
-        if new_exe != current_exe:
-            elapsed_time = now - start_time
-            if current_exe in time_data: 
-                time_data[current_exe] += round(elapsed_time)
-            else:
-                time_data[current_exe] = round(elapsed_time)
-            current_exe = new_exe
-            start_time = now
-            last_update = now
     
-        if now - last_update >= update_interval:
-            elapsed_time = now - start_time
-            if current_exe in time_data:
-                time_data[current_exe] += round(elapsed_time)
-            else:
-                time_data[current_exe] = round(elapsed_time)
-            start_time = now
-            last_update = now
+    def gather_time_data():
+        current_exe = get_foreground_exe()
+        start_time = time.time()
+        update_interval = 60
+        save_interval = 300
+        last_update = 0
+        last_save = time.time()
+        while True:
+            time.sleep(5)
+            new_exe = get_foreground_exe()
+            now = time.time()
+            print(time_data)
+            check_date()
 
-        if now - last_save >= save_interval:
-            save_time_data()
-            last_save = now
+            if new_exe != current_exe:
+                elapsed_time = now - start_time
+                if current_exe in time_data: 
+                    time_data[current_exe] += round(elapsed_time)
+                else:
+                    time_data[current_exe] = round(elapsed_time)
+                current_exe = new_exe
+                start_time = now
+                last_update = now
+        
+            if now - last_update >= update_interval:
+                elapsed_time = now - start_time
+                if current_exe in time_data:
+                    time_data[current_exe] += round(elapsed_time)
+                else:
+                    time_data[current_exe] = round(elapsed_time)
+                start_time = now
+                last_update = now
 
-
-
-
-
-
+            if now - last_save >= save_interval:
+                save_time_data()
+                last_save = now
+    gather_time_data()
 
             
 
 print("Next save at", datetime.date.today() + timedelta(days=1))
 
-
+thread1 = threading.Thread(target=gather_data)
+thread1.start()
+thread2 = threading.Thread(target=tkinter_window)
+thread2.start()
 
 
 def exit_handler():
     save_time_data()
     return None
 atexit.register(exit_handler)
-
-mainloop()
