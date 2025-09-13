@@ -5,14 +5,12 @@ import datetime
 from datetime import timedelta
 import atexit
 import json
-import data_analyzer as data
 from matplotlib.figure import Figure
 from tkinter import *
 from matplotlib.backends.backend_tkagg import(FigureCanvasTkAgg, NavigationToolbar2Tk)
 from PIL import Image
 import keyboard
 import os
-import socket
 import mouse
 import threading
 
@@ -28,8 +26,8 @@ with open("time_data.json") as f:
     except Exception as e:
         print(e)
 
-with open("program_names.json") as apps:
-    program_names = json.load(apps)
+with open("program_names.json") as f:
+    program_names = json.load(f)
 
 def get_foreground_exe():
     try:
@@ -48,10 +46,18 @@ def save_time_data():
     except IOError:
         print("An IOError has occured.")
 
+def gather_mouse_data():
+    mouse.record("right")
+
 def tkinter_window():
-    window = Tk()
-    window.title("Screentime")
-    window.geometry("500x500")
+    root = Tk()
+    root.title("Screentime")
+    root.geometry("500x500")
+
+    fig = Figure(figsize=(10,10), dpi = 100)
+    canvas = FigureCanvasTkAgg(fig, master = root)
+    toolbar = NavigationToolbar2Tk(canvas, root)
+    plot1 = fig.add_subplot()
 
     def plot():
         save_time_data()
@@ -70,44 +76,37 @@ def tkinter_window():
         keys = list(final_data.keys())
         values = list(final_data.values())
 
-        fig = Figure(figsize=(5,5),
-                    dpi = 100)
-        plot1 = fig.add_subplot()
         
-        plot1.bar(keys,values)
+
         
-        canvas = FigureCanvasTkAgg(fig, master = window)
+        plot1.bar(keys, values)
+        
+        
 
         canvas.draw()
         
         canvas.get_tk_widget().pack()
         
-        toolbar = NavigationToolbar2Tk(canvas, window)
+        
         
         toolbar.update()
         
-        canvas.get_tk_widget().pack()
-
-        
 
 
 
-    plot_button = Button(master = window,
+    plot_button = Button(master = root,
                         height = 2,
                         width = 10,
                         text  = "Plot",
                         command = plot)
 
-    plot_button.pack(side=LEFT)
+    plot_button.pack(side=TOP, anchor=NW)
 
-    window.mainloop()
+    root.mainloop()
 
 
         
 def gather_data():
-    
-    
-    
 
     with open("user_data.json", "r") as f:
         user_data = json.load(f)
@@ -136,17 +135,8 @@ def gather_data():
 
             with open("time_data.json", "w") as f:
                 json.dump({}, f)
-                
 
     check_date()
-
-    
-    
-
- 
-
-    host_name = socket.gethostname()
-    ip_address = socket.gethostbyname(host_name)
 
     user_data = {
         "current_date": get_date_str(),
@@ -189,6 +179,7 @@ def gather_data():
             if now - last_save >= save_interval:
                 save_time_data()
                 last_save = now
+
     gather_time_data()
 
             
@@ -199,6 +190,8 @@ thread1 = threading.Thread(target=gather_data)
 thread1.start()
 thread2 = threading.Thread(target=tkinter_window)
 thread2.start()
+thread3 = threading.Thread(target=gather_mouse_data)
+thread3.start()
 
 
 def exit_handler():
