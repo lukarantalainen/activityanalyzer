@@ -45,7 +45,6 @@ program_names = load_json("program_names.json")
 
 
 
-
 def get_foreground_exe():
     try:
         hwnd = ctypes.windll.user32.GetForegroundWindow()
