@@ -23,29 +23,24 @@ def create_files():
     if not os.path.exists("mouse_data.txt"):
         with open("mouse_data.txt", "w") as f:
             f.write("")
+    if not os.path.exists("user_data.json"):
+        with open("user_data.json", "w") as f:
+            default = {"current_date": str("14/09/2025")}
+            json.dump(default, f)
 
-def load_time_data():
-    with open("time_data.json") as f:
+create_files()
+
+def load_json(path):
+    with open(path, "r") as f:
         try:
-            time_data = json.load(f)
+            return json.load(f)
         except Exception as e:
             print(e)
-        return time_data
-    
-def load_program_names():
-    with open("program_names.json") as f:
-        program_names = json.load(f)
-        return program_names
-    
-def load_user_data():
-    with open("user_data.json", "r") as f:
-        user_data = json.load(f)
-        return user_data
 
-user_data = load_user_data()
-time_data = load_time_data()
-program_names = load_program_names()
 
+user_data = load_json("user_data.json")
+time_data = load_json("time_data.json")
+program_names = load_json("program_names.json")
 
 
 
@@ -158,7 +153,7 @@ def gather_time_data():
     last_update = 0
     last_save = time.time()
     while True:
-        time.sleep(5)
+        time.sleep(1)
         new_exe = get_foreground_exe()
         now = time.time()
         check_date()
