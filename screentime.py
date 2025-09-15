@@ -9,7 +9,7 @@ from matplotlib.figure import Figure
 from tkinter import *
 from matplotlib.backends.backend_tkagg import(FigureCanvasTkAgg, NavigationToolbar2Tk)
 from PIL import Image
-import keyboard as kb
+import keyboard
 import os
 import mouse
 import threading
@@ -43,6 +43,14 @@ time_data = load_json("time_data.json")
 program_names = load_json("program_names.json")
 
 
+def save_json(data, path):
+    try:
+            with open(path, "w") as f:
+                json.dump(data, f)
+            print("Time data succesfully saved!")
+    except IOError:
+        print("An IOError has occured.")
+
 
 
 def get_foreground_exe():
@@ -54,62 +62,11 @@ def get_foreground_exe():
     except Exception:
          return None
 
-def save_json(data, path):
-    try:
-            with open(path, "w") as f:
-                json.dump(data, f)
-            print("Time data succesfully saved!")
-    except IOError:
-        print("An IOError has occured.")
 
 
 
 
-def tkinter():
-    root = Tk()
-    root.title("Screentime")
-    root.geometry("500x500")
 
-    fig = Figure(figsize=(10,10), dpi = 100)
-    plot1 = fig.add_subplot()
-    canvas = FigureCanvasTkAgg(fig, master = root)
-    
-    toolbar = NavigationToolbar2Tk(canvas, root)
-
-    def plot():
-        plot1.clear()
-        save_json(time_data, "time_data.json")
-        final_data  = {}
-        with open("time_data.json", "r") as f:
-            plot_data = json.load(f)
-        for key, value in plot_data.items():
-            app = os.path.basename(key).lower()
-            app =  os.path.splitext(app)[0].lower()
-            if app in program_names:
-                app = program_names[app]
-                final_data[app] = final_data.get(app, 0) + round(value/60, 2)
-            else:
-                final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
-
-        keys = list(final_data.keys())
-        values = list(final_data.values())
-        canvas.get_tk_widget().pack()
-        toolbar.update()
-        plot1.bar(keys, values)
-        canvas.draw()
-        
-
-        
-
-
-
-    plot_button = Button(master = root, height = 2, width = 10, text  = "Plot", command = plot)
-    plot_button.pack(side=TOP, anchor=NW)
-
-    root.mainloop()
-
-
-        
 
 
 
@@ -147,10 +104,13 @@ save_json(user_data, "user_data.json")
 def gather_time_data():
     current_exe = get_foreground_exe()
     start_time = time.time()
-    update_interval = 60
+    update_interval = 5
     save_interval = 300
     last_update = 0
     last_save = time.time()
+
+
+
     while True:
         time.sleep(1)
         new_exe = get_foreground_exe()
@@ -180,13 +140,77 @@ def gather_time_data():
             save_json(time_data, "time_data.json")
             last_save = now
 
+# def gather_mouse_data():
+     
+    # left = 0
+    # right = 0
+
+    # def clicks_append(button):
+    #     button += 1
+
+    # mouse.on_click(clicks_append(left))
+
+
+
+    # events = []
+    # mouse.hook(events.append)
+
+    # def process_data():
+    #     mouse.unhook_all()
+    #     mouse.play(events)
+    #     print(left)
+
+    # keyboard.add_hotkey("esc", process_data)
+
+
+root = Tk()
+root.title("Screentime")
+root.geometry("500x500")
+
+fig = Figure(figsize=(10,10), dpi = 100)
+plot1 = fig.add_subplot()
+canvas = FigureCanvasTkAgg(fig, master = root)
+
+toolbar = NavigationToolbar2Tk(canvas, root)
+
+def plot():
+    
+    plot1.clear()
+    final_data  = {}
+    for key, value in time_data.items():
+        app = os.path.basename(key).lower()
+        app =  os.path.splitext(app)[0].lower()
+        if app in program_names:
+            app = program_names[app]
+            final_data[app] = final_data.get(app, 0) + round(value/60, 2)
+        else:
+            final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
+
+    keys = list(final_data.keys())
+    values = list(final_data.values())
+    canvas.get_tk_widget().pack()
+    toolbar.update()
+    plot1.bar(keys, values)
+    canvas.draw()
+    
+
+
+    
+
+
+
+plot_button = Button(master = root, height = 2, width = 10, text  = "Plot", command = plot)
+plot_button.pack(side=TOP, anchor=NW)
 
 thread1 = threading.Thread(target=gather_time_data)
 thread1.start()
-thread2 = threading.Thread(target=tkinter)
-thread2.start()
-# thread3 = threading.Thread(target=keylogger)
-# thread3.start()
+# thread2 = threading.Thread(target=gather_mouse_data)
+# thread2.start()
+
+root.mainloop()
+
+
+
 
 def exit_handler():
     save_json(time_data, "time_data.json")
