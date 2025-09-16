@@ -20,9 +20,6 @@ def create_files():
     if not os.path.exists("time_data.json"):
         with open("time_data.json", "w") as f:
             json.dump({}, f)
-    if not os.path.exists("mouse_data.txt"):
-        with open("mouse_data.txt", "w") as f:
-            f.write("")
     if not os.path.exists("user_data.json"):
         with open("user_data.json", "w") as f:
             default = {"current_date": str("14/09/2025")}
@@ -60,7 +57,7 @@ def get_foreground_exe():
         ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
         return psutil.Process(pid.value).exe()
     except Exception:
-         return None
+         return "fuck off"
 
 
 
@@ -104,9 +101,9 @@ save_json(user_data, "user_data.json")
 def gather_time_data():
     current_exe = get_foreground_exe()
     start_time = time.time()
-    update_interval = 5
+    update_interval = 1
     save_interval = 300
-    last_update = 0
+    last_update = time.time()
     last_save = time.time()
 
 
@@ -116,6 +113,12 @@ def gather_time_data():
         new_exe = get_foreground_exe()
         now = time.time()
         check_date()
+        
+        
+        self = r"C:\Users\lukar\AppData\Local\Programs\Python\Python313\python.exe"
+
+        if new_exe == self:
+            plot()
 
         if new_exe != current_exe:
             elapsed_time = now - start_time
@@ -140,57 +143,115 @@ def gather_time_data():
             save_json(time_data, "time_data.json")
             last_save = now
 
-# def gather_mouse_data():
-     
-    # left = 0
-    # right = 0
+def gather_mouse_data():
 
-    # def clicks_append(button):
-    #     button += 1
+    events = []
+    mouse.hook(events.append)
+ 
+    def process_data():
 
-    # mouse.on_click(clicks_append(left))
+        mouse.unhook_all()
+
+        mouse_data = {}
+
+
+        if not os.path.exists("mouse_data.json"):
+            
+            mouse_data = {
+                "mouse1": 0, #lclick
+                "mouse2": 0, #rclick
+                "mouse3": 0, #back
+                "mouse4": 0 #forward
+ 
+            }
+
+            save_json(mouse_data, "mouse_data.json")
+        
+
+        mouse_data = load_json("mouse_data.json")
+
+        move_data = []
+        
+
+
+        for item in events:
+            if str(item).startswith("ButtonEvent(event_type='double', button='left'")==True:
+                mouse_data["mouse1"] += 1
+            elif str(item).startswith("ButtonEvent(event_type='down', button='left'")==True:
+                mouse_data["mouse1"] += 2
+                print("hello")
+            if str(item).startswith("ButtonEvent(event_type='double', button='right'")==True:
+              mouse_data["mouse2"] +=1
+            elif str(item).startswith("ButtonEvent(event_type='down', button='right'")==True:
+              mouse_data["mouse2"] +=2
+            if str(item).startswith("ButtonEvent(event_type='double', button='x'")==True:
+              mouse_data["mouse3"] +=1
+            elif str(item).startswith("ButtonEvent(event_type='down', button='x'")==True:
+              mouse_data["mouse3"] +=2
+            if str(item).startswith("ButtonEvent(event_type='double', button='x2'")==True:
+              mouse_data["mouse4"] +=1
+            elif str(item).startswith("ButtonEvent(event_type='down', button='x2'")==True:
+                mouse_data["mouse4"] +=1
+
+            if str(item).startswith("MoveEvent"):
+                move_data.append(item)
+                
 
 
 
-    # events = []
-    # mouse.hook(events.append)
+        save_json(mouse_data, "mouse_data.json")
 
-    # def process_data():
-    #     mouse.unhook_all()
-    #     mouse.play(events)
-    #     print(left)
-
-    # keyboard.add_hotkey("esc", process_data)
+        mouse.play(move_data)
+ 
+    keyboard.wait("space")
+    process_data()
 
 
 root = Tk()
 root.title("Screentime")
 root.geometry("500x500")
 
-fig = Figure(figsize=(10,10), dpi = 100)
-plot1 = fig.add_subplot()
-canvas = FigureCanvasTkAgg(fig, master = root)
+fig1 = Figure(figsize=(10,10), dpi = 100)
+fig2 = Figure(figsize=(10,10), dpi = 100)
 
+plot1 = fig1.add_subplot()
+plot2 = fig2.add_subplot()
+
+canvas = FigureCanvasTkAgg(fig1, master = root)
 toolbar = NavigationToolbar2Tk(canvas, root)
 
+
+
 def plot():
+
+    mouse_data = load_json("mouse_data.json")
     
     plot1.clear()
-    final_data  = {}
-    for key, value in time_data.items():
-        app = os.path.basename(key).lower()
+    plot2.clear()
+    canvas.get_tk_widget().pack()
+    toolbar.update()
+    
+    final_data = {}
+    for tkey, tvalue in time_data.items():
+        app = os.path.basename(tkey).lower()
         app =  os.path.splitext(app)[0].lower()
         if app in program_names:
             app = program_names[app]
-            final_data[app] = final_data.get(app, 0) + round(value/60, 2)
+            final_data[app] = final_data.get(app, 0) + round(tvalue/60, 2)
         else:
-            final_data[app.title()] = final_data.get(app, 0) + round(value/60, 2)
+            final_data[app.title()] = final_data.get(app, 0) + round(tvalue/60, 2)
 
-    keys = list(final_data.keys())
-    values = list(final_data.values())
-    canvas.get_tk_widget().pack()
-    toolbar.update()
-    plot1.bar(keys, values)
+    tkeys = list(final_data.keys())
+    tvalues = list(final_data.values())
+
+    plot1.bar(tkeys, tvalues)
+
+
+    mkeys = list(mouse_data.keys())
+    mvalues = list(mouse_data.values())
+
+    plot2.bar(mkeys, mvalues)
+
     canvas.draw()
     
 
@@ -204,8 +265,8 @@ plot_button.pack(side=TOP, anchor=NW)
 
 thread1 = threading.Thread(target=gather_time_data)
 thread1.start()
-# thread2 = threading.Thread(target=gather_mouse_data)
-# thread2.start()
+thread2 = threading.Thread(target=gather_mouse_data)
+thread2.start()
 
 root.mainloop()
 
