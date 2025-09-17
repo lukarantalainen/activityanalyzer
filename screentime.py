@@ -57,7 +57,7 @@ def get_foreground_exe():
         ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
         return psutil.Process(pid.value).exe()
     except Exception:
-         return "fuck off"
+         return None
 
 
 
@@ -172,29 +172,30 @@ def gather_mouse_data():
 
         move_data = []
         
+        for i in events:
+            print(i.button)
 
+        # for item in events:
+        #     if item.button=='left' and item.event_type=='down':
+        #         mouse_data["mouse1"] += 1
+        #     elif str(item).startswith("ButtonEvent(event_type='down', button='left'")==True:
+        #         mouse_data["mouse1"] += 2
+        #         print("hello")
+        #     if str(item).startswith("ButtonEvent(event_type='double', button='right'")==True:
+        #       mouse_data["mouse2"] +=1
+        #     elif str(item).startswith("ButtonEvent(event_type='down', button='right'")==True:
+        #       mouse_data["mouse2"] +=2
+        #     if str(item).startswith("ButtonEvent(event_type='double', button='x'")==True:
+        #       mouse_data["mouse3"] +=1
+        #     elif str(item).startswith("ButtonEvent(event_type='down', button='x'")==True:
+        #       mouse_data["mouse3"] +=2
+        #     if str(item).startswith("ButtonEvent(event_type='double', button='x2'")==True:
+        #       mouse_data["mouse4"] +=1
+        #     elif str(item).startswith("ButtonEvent(event_type='down', button='x2'")==True:
+        #         mouse_data["mouse4"] +=1
 
-        for item in events:
-            if str(item).startswith("ButtonEvent(event_type='double', button='left'")==True:
-                mouse_data["mouse1"] += 1
-            elif str(item).startswith("ButtonEvent(event_type='down', button='left'")==True:
-                mouse_data["mouse1"] += 2
-                print("hello")
-            if str(item).startswith("ButtonEvent(event_type='double', button='right'")==True:
-              mouse_data["mouse2"] +=1
-            elif str(item).startswith("ButtonEvent(event_type='down', button='right'")==True:
-              mouse_data["mouse2"] +=2
-            if str(item).startswith("ButtonEvent(event_type='double', button='x'")==True:
-              mouse_data["mouse3"] +=1
-            elif str(item).startswith("ButtonEvent(event_type='down', button='x'")==True:
-              mouse_data["mouse3"] +=2
-            if str(item).startswith("ButtonEvent(event_type='double', button='x2'")==True:
-              mouse_data["mouse4"] +=1
-            elif str(item).startswith("ButtonEvent(event_type='down', button='x2'")==True:
-                mouse_data["mouse4"] +=1
-
-            if str(item).startswith("MoveEvent"):
-                move_data.append(item)
+        #     if str(item).startswith("MoveEvent"):
+        #         move_data.append(item)
                 
 
 
