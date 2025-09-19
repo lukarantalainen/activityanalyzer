@@ -25,8 +25,6 @@ def create_files():
             default = {"current_date": str("14/09/2025")}
             json.dump(default, f)
 
-create_files()
-
 def load_json(path):
     with open(path, "r") as f:
         try:
@@ -34,11 +32,9 @@ def load_json(path):
         except Exception as e:
             print(e)
 
-
 user_data = load_json("user_data.json")
 time_data = load_json("time_data.json")
 program_names = load_json("program_names.json")
-
 
 def save_json(data, path):
     try:
@@ -47,8 +43,6 @@ def save_json(data, path):
             print("Time data succesfully saved!")
     except IOError:
         print("An IOError has occured.")
-
-
 
 def get_foreground_exe():
     try:
@@ -59,15 +53,6 @@ def get_foreground_exe():
     except Exception:
          return None
 
-
-
-
-
-
-
-
-
-
 def get_date_str():
     current_date = datetime.date.today()
     date_str = current_date.strftime("%d/%m/%Y")
@@ -77,8 +62,6 @@ def get_tomorrow_date():
     tomorrow_date = datetime.date.today() + timedelta(1)
     tomorrowdatestr = tomorrow_date.strftime("%d/%m/%y")
     return tomorrowdatestr
-
-
 
 def check_date():
     last_date = user_data.get("current_date")
@@ -106,19 +89,13 @@ def gather_time_data():
     last_update = time.time()
     last_save = time.time()
 
-
-
     while True:
         time.sleep(1)
         new_exe = get_foreground_exe()
         now = time.time()
         check_date()
-        
-        
+          
         self = r"C:\Users\lukar\AppData\Local\Programs\Python\Python313\python.exe"
-
-        if new_exe == self:
-            plot()
 
         if new_exe != current_exe:
             elapsed_time = now - start_time
@@ -142,6 +119,9 @@ def gather_time_data():
         if now - last_save >= save_interval:
             save_json(time_data, "time_data.json")
             last_save = now
+        
+        if new_exe == self:
+            plot()
 
 def gather_mouse_data():
 
@@ -156,49 +136,31 @@ def gather_mouse_data():
 
 
         if not os.path.exists("mouse_data.json"):
-            
             mouse_data = {
                 "mouse1": 0, #lclick
                 "mouse2": 0, #rclick
-                "mouse3": 0, #back
-                "mouse4": 0 #forward
- 
+                "mouse3": 0, #back, x 
+                "mouse4": 0 #forward, x2
             }
-
             save_json(mouse_data, "mouse_data.json")
         
-
         mouse_data = load_json("mouse_data.json")
 
         move_data = []
-        
+         
         for i in events:
-            print(i.button)
-
-        # for item in events:
-        #     if item.button=='left' and item.event_type=='down':
-        #         mouse_data["mouse1"] += 1
-        #     elif str(item).startswith("ButtonEvent(event_type='down', button='left'")==True:
-        #         mouse_data["mouse1"] += 2
-        #         print("hello")
-        #     if str(item).startswith("ButtonEvent(event_type='double', button='right'")==True:
-        #       mouse_data["mouse2"] +=1
-        #     elif str(item).startswith("ButtonEvent(event_type='down', button='right'")==True:
-        #       mouse_data["mouse2"] +=2
-        #     if str(item).startswith("ButtonEvent(event_type='double', button='x'")==True:
-        #       mouse_data["mouse3"] +=1
-        #     elif str(item).startswith("ButtonEvent(event_type='down', button='x'")==True:
-        #       mouse_data["mouse3"] +=2
-        #     if str(item).startswith("ButtonEvent(event_type='double', button='x2'")==True:
-        #       mouse_data["mouse4"] +=1
-        #     elif str(item).startswith("ButtonEvent(event_type='down', button='x2'")==True:
-        #         mouse_data["mouse4"] +=1
-
-        #     if str(item).startswith("MoveEvent"):
-        #         move_data.append(item)
-                
-
-
+            if type(i) == mouse._mouse_event.MoveEvent:
+                pass
+            else:
+                if i.event_type == 'down' or i.event_type == 'double':
+                    if i.button == 'left':
+                        mouse_data["mouse1"] += 1
+                    elif i.button == 'right':
+                        mouse_data["mouse2"] += 1
+                    elif i.button == 'x':
+                        mouse_data["mouse3"] += 1
+                    elif i.button == 'x2':
+                        mouse_data["mouse4"] += 1
 
         save_json(mouse_data, "mouse_data.json")
 
@@ -207,6 +169,7 @@ def gather_mouse_data():
     keyboard.wait("space")
     process_data()
 
+create_files()
 
 root = Tk()
 root.title("Screentime")
@@ -224,8 +187,6 @@ toolbar = NavigationToolbar2Tk(canvas, root)
 
 
 def plot():
-
-    mouse_data = load_json("mouse_data.json")
     
     plot1.clear()
     plot2.clear()
@@ -246,20 +207,10 @@ def plot():
     tvalues = list(final_data.values())
 
     plot1.bar(tkeys, tvalues)
-
-
-    mkeys = list(mouse_data.keys())
-    mvalues = list(mouse_data.values())
-
-    plot2.bar(mkeys, mvalues)
-
+    # mkeys = list(mouse_data.keys())
+    # mvalues = list(mouse_data.values())
+    # plot2.bar(mkeys, mvalues)
     canvas.draw()
-    
-
-
-    
-
-
 
 plot_button = Button(master = root, height = 2, width = 10, text  = "Plot", command = plot)
 plot_button.pack(side=TOP, anchor=NW)
@@ -271,10 +222,8 @@ thread2.start()
 
 root.mainloop()
 
-
-
-
 def exit_handler():
     save_json(time_data, "time_data.json")
+    os.remove("mouse_data.json")
     return None
 atexit.register(exit_handler)
