@@ -24,6 +24,9 @@ def create_files():
         with open("user_data.json", "w") as f:
             default = {"current_date": str("14/09/2025")}
             json.dump(default, f)
+    if not os.path.exists("kb_data.json"):
+        with open("kb_data.json", "w") as f:
+            json.dump({}, f)
 
 def load_json(path):
     with open(path, "r") as f:
@@ -125,16 +128,16 @@ def gather_time_data():
 
 def gather_mouse_data():
 
-    events = []
-    mouse.hook(events.append)
- 
+    mevents = []
+    mouse.hook(mevents.append)
+    kbevents = []
+    keyboard.hook(kbevents.append)
+
     def process_data():
 
         mouse.unhook_all()
-
-        mouse_data = {}
-
-
+        keyboard.unhook_all()
+        
         if not os.path.exists("mouse_data.json"):
             mouse_data = {
                 "mouse1": 0, #lclick
@@ -145,10 +148,9 @@ def gather_mouse_data():
             save_json(mouse_data, "mouse_data.json")
         
         mouse_data = load_json("mouse_data.json")
-
-        move_data = []
+        kb_data = load_json("kb_data.json")
          
-        for i in events:
+        for i in mevents:
             if type(i) == mouse._mouse_event.MoveEvent:
                 pass
             else:
@@ -162,12 +164,29 @@ def gather_mouse_data():
                     elif i.button == 'x2':
                         mouse_data["mouse4"] += 1
 
-        save_json(mouse_data, "mouse_data.json")
+        for i in kbevents:
+            if i.event_type == 'down':
+                if i.name in kb_data:
+                    kb_data[i.name] += 1
+                else:
+                    kb_data[i.name] = 1
 
-        mouse.play(move_data)
- 
-    keyboard.wait("space")
+        save_json(mouse_data, "mouse_data.json")
+        save_json(kb_data, "kb_data.json")
+
+        load_json("kb_data.json")
+        print(kb_data)
+
+    keyboard.wait("esc")
     process_data()
+
+def gather_keyboard_data():
+
+
+
+    keyboard_data = keyboard.record("space")
+    keyboard.play(keyboard_data)
+
 
 create_files()
 
@@ -219,11 +238,12 @@ thread1 = threading.Thread(target=gather_time_data)
 thread1.start()
 thread2 = threading.Thread(target=gather_mouse_data)
 thread2.start()
+thread3 = threading.Thread(target=gather_keyboard_data)
+thread3.start()
 
 root.mainloop()
 
 def exit_handler():
     save_json(time_data, "time_data.json")
-    os.remove("mouse_data.json")
     return None
 atexit.register(exit_handler)
