@@ -6,6 +6,7 @@ from datetime import timedelta
 import atexit
 import json
 from matplotlib.figure import Figure
+import tkinter
 from tkinter import *
 from matplotlib.backends.backend_tkagg import(FigureCanvasTkAgg, NavigationToolbar2Tk)
 from PIL import Image
@@ -13,6 +14,7 @@ import keyboard
 import os
 import mouse
 import threading
+import seaborn
 
 time_data = {}
 
@@ -44,8 +46,8 @@ def save_json(data, path):
             with open(path, "w") as f:
                 json.dump(data, f)
             print("Time data succesfully saved!")
-    except IOError:
-        print("An IOError has occured.")
+    except Exception as e:
+        print(e)
 
 def get_foreground_exe():
     try:
@@ -126,7 +128,7 @@ def gather_time_data():
         if new_exe == self:
             plot()
 
-def gather_mouse_data():
+def gather_perif_data():
 
     mevents = []
     mouse.hook(mevents.append)
@@ -138,55 +140,40 @@ def gather_mouse_data():
         mouse.unhook_all()
         keyboard.unhook_all()
         
-        if not os.path.exists("mouse_data.json"):
-            mouse_data = {
-                "mouse1": 0, #lclick
-                "mouse2": 0, #rclick
-                "mouse3": 0, #back, x 
-                "mouse4": 0 #forward, x2
-            }
-            save_json(mouse_data, "mouse_data.json")
-        
         mouse_data = load_json("mouse_data.json")
-        kb_data = load_json("kb_data.json")
+        kb_data = list((load_json("kb_data.json")))
+        key_counter = {}
          
         for i in mevents:
-            if type(i) == mouse._mouse_event.MoveEvent:
+            if type(i) == mouse._mouse_event.MoveEvent or mouse._mouse_event.WheelEvent:
                 pass
             else:
                 if i.event_type == 'down' or i.event_type == 'double':
-                    if i.button == 'left':
-                        mouse_data["mouse1"] += 1
-                    elif i.button == 'right':
-                        mouse_data["mouse2"] += 1
-                    elif i.button == 'x':
-                        mouse_data["mouse3"] += 1
-                    elif i.button == 'x2':
-                        mouse_data["mouse4"] += 1
+                    if i.button in mouse_data:
+                        mouse_data[i.button] += 1
+                    else:
+                        mouse_data[i.button] = 1
+
+        for i in kb_data:
+            if i in key_counter:
+                key_counter[i] += 1
+            else:
+                key_counter[i] = 1
+
+        print(dict(sorted(key_counter.items())))
 
         for i in kbevents:
             if i.event_type == 'down':
-                if i.name in kb_data:
-                    kb_data[i.name] += 1
-                else:
-                    kb_data[i.name] = 1
+                kb_data.append(i.name)
 
+        json.dumps(kb_data)
+        
         save_json(mouse_data, "mouse_data.json")
         save_json(kb_data, "kb_data.json")
-
-        load_json("kb_data.json")
-        print(kb_data)
+        save_json(kb_data, "kb_data.json")
 
     keyboard.wait("esc")
     process_data()
-
-def gather_keyboard_data():
-
-
-
-    keyboard_data = keyboard.record("space")
-    keyboard.play(keyboard_data)
-
 
 create_files()
 
@@ -194,23 +181,41 @@ root = Tk()
 root.title("Screentime")
 root.geometry("500x500")
 
-fig1 = Figure(figsize=(10,10), dpi = 100)
-fig2 = Figure(figsize=(10,10), dpi = 100)
+# class Graph(tkinter.Frame):
+#     def __init__(self, master, width, height, bg):
+#         self.master = master
+#         self.width = width
+#         self.height = height
+#         self.bg = bg
+
+
+graph1 = tkinter.Frame(root, width=200, height=200, bg="blue")
+graph1.pack(padx=10, pady=10)
+
+graph2 = tkinter.Frame(root, width=190, height=190, bg="red")
+graph2.pack(padx=10, pady=10)
+
+fig1 = Figure()
+fig2 = Figure()
 
 plot1 = fig1.add_subplot()
 plot2 = fig2.add_subplot()
 
-canvas = FigureCanvasTkAgg(fig1, master = root)
-toolbar = NavigationToolbar2Tk(canvas, root)
-
-
+canvas1 = FigureCanvasTkAgg(figure=fig1, master = graph1)
+toolbar = NavigationToolbar2Tk(canvas=canvas1, window=graph2)
+canvas2 = FigureCanvasTkAgg(figure=fig2, master = graph2)
+toolbar = NavigationToolbar2Tk(canvas=canvas2, window=graph2)
 
 def plot():
     
     plot1.clear()
     plot2.clear()
-    canvas.get_tk_widget().pack()
+    canvas1.get_tk_widget().pack()
+    canvas2.get_tk_widget().pack()
     toolbar.update()
+    
+    mouse_data = load_json("mouse_data.json")
+    kb_data = load_json("kb_data.json")
     
     final_data = {}
     for tkey, tvalue in time_data.items():
@@ -224,22 +229,24 @@ def plot():
 
     tkeys = list(final_data.keys())
     tvalues = list(final_data.values())
-
     plot1.bar(tkeys, tvalues)
-    # mkeys = list(mouse_data.keys())
-    # mvalues = list(mouse_data.values())
-    # plot2.bar(mkeys, mvalues)
-    canvas.draw()
+
+    mkeys = list(mouse_data.keys())
+    mvalues = list(mouse_data.values())
+    plot2.bar(mkeys, mvalues)
+
+    canvas1.draw()
+    canvas2.draw()
+    
+
 
 plot_button = Button(master = root, height = 2, width = 10, text  = "Plot", command = plot)
 plot_button.pack(side=TOP, anchor=NW)
 
 thread1 = threading.Thread(target=gather_time_data)
 thread1.start()
-thread2 = threading.Thread(target=gather_mouse_data)
+thread2 = threading.Thread(target=gather_perif_data)
 thread2.start()
-thread3 = threading.Thread(target=gather_keyboard_data)
-thread3.start()
 
 root.mainloop()
 
