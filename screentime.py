@@ -19,6 +19,19 @@ import seaborn
 
 def main():
     create_files()
+    check_date()
+
+    global time_data, mouse_data, kb_data, key_counter
+    time_data = load_json("time_data.json")
+    mouse_data = load_json("mouse_data.json")
+    kb_data = list(load_json("kb_data.json"))
+    key_counter = {}
+
+    thread1 = threading.Thread(target=record_time, daemon=True)
+    thread1.start()
+    thread2 = threading.Thread(target=record_input, daemon=True)
+    thread2.start()
+
     gui = GUI()
     gui.mainloop()
 
@@ -28,10 +41,12 @@ def create_files():
             json.dump({}, f)
     if not os.path.exists("user_data.json"):
         with open("user_data.json", "w") as f:
-            default = {"current_date": str("14/09/2025")}
-            json.dump(default, f)
+            json.dump({}, f)
     if not os.path.exists("kb_data.json"):
         with open("kb_data.json", "w") as f:
+            json.dump({}, f)
+    if not os.path.exists("mouse_data.json"):
+        with open("mouse_data.json", "w") as f:
             json.dump({}, f)
 
 def load_json(path):
@@ -74,16 +89,14 @@ def get_tomorrow_date():
 def check_date():
     user_data = load_json("user_data.json")
     last_date = user_data["current_date"]
-    print(last_date)
-    if get_date_str() > last_date:
-        save_json(user_data, "user_data.json")
+    if get_date_str() != last_date:
         clear_json("time_data.json")
         clear_json("mouse_data.json")
         clear_json("kb_data.json")
+        user_data["current_date"] = get_date_str()
+        save_json(user_data, "user_data.json")
     else:
         user_data["current_date"] = get_date_str()
-
-time_data = load_json("time_data.json")
 
 def record_time():
     current_exe = get_foreground_exe()
@@ -121,52 +134,46 @@ def record_time():
             save_json(time_data, "time_data.json")
             check_date()
             last_save = now
-
-mouse_data = load_json("mouse_data.json")
-kb_data = list((load_json("kb_data.json")))
-key_counter = {}
+mevents = []
+kbevents = []
 
 def record_input():
-
-    mevents = []
+    mevents.clear()
+    kbevents.clear()
     mouse.hook(mevents.append)
-    kbevents = []
     keyboard.hook(kbevents.append)
+
+def process_data():
+    mouse.unhook_all()
+    keyboard.unhook_all()
+
+    for i in mevents:
+        if type(i) == mouse._mouse_event.MoveEvent:
+            pass
+        elif type(i) == mouse._mouse_event.WheelEvent:
+            print(i)
+        else:
+            if i.event_type == 'down' or i.event_type == 'double':
+                if i.button in mouse_data:
+                    mouse_data[i.button] += 1
+                else:
+                    mouse_data[i.button] = 1
+
+    for i in kbevents:
+        if i.event_type == 'down':
+            kb_data.append(i.name)
+
+    for i in kb_data:
+        if i in key_counter:
+            key_counter[i] += 1
+        else:
+            key_counter[i] = 1
+
+    save_json(mouse_data, "mouse_data.json")
+    json.dumps(kb_data)
+    save_json(kb_data, "kb_data.json")
     
-    def process_data():
-
-        mouse.unhook_all()
-        keyboard.unhook_all()
-
-        for i in mevents:
-            if type(i) == mouse._mouse_event.MoveEvent:
-                pass
-            elif type(i) == mouse._mouse_event.WheelEvent:
-                print(i)
-            else:
-                if i.event_type == 'down' or i.event_type == 'double':
-                    if i.button in mouse_data:
-                        mouse_data[i.button] += 1
-                    else:
-                        mouse_data[i.button] = 1
-
-        for i in kbevents:
-            if i.event_type == 'down':
-                kb_data.append(i.name)
-
-        for i in kb_data:
-            if i in key_counter:
-                key_counter[i] += 1
-            else:
-                key_counter[i] = 1
-
-        save_json(mouse_data, "mouse_data.json")
-        save_json(kb_data, "kb_data.json")
-
-        json.dumps(kb_data)
-            
-    keyboard.wait("esc")
-    process_data()
+    record_input()
 
 class GUI(tk.Tk):
     def __init__(self):
@@ -223,6 +230,7 @@ class GraphFrame(ttk.Frame):
             self.canvas.draw()
 
         elif self.name == "Mouse data":
+            process_data()
             self.graph.clear()
             mkeys = list(mouse_data.keys())
             mvalues = list(mouse_data.values())
@@ -230,20 +238,16 @@ class GraphFrame(ttk.Frame):
             self.canvas.draw()
 
         elif self.name == "Keyboard data":
-
+            process_data()
             self.graph.clear()
+            
             kbkeys = list(key_counter.keys())
             kbvalues = list(key_counter.values())
             self.graph.stem(kbkeys, kbvalues)
-            self.canvas.draw()
-            
+            key_counter.clear()
+            self.canvas.draw() 
         else:
             return None
-
-thread1 = threading.Thread(target=record_time, daemon=True)
-thread1.start()
-thread2 = threading.Thread(target=record_input, daemon=True)
-thread2.start()
 
 def save_all():
     save_json(time_data, "time_data.json")
