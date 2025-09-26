@@ -10,12 +10,12 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-from PIL import Image
 import keyboard
 import os
 import mouse
 import threading
 import seaborn
+from PIL import Image, ImageTk
 
 def main():
     create_files()
@@ -32,7 +32,7 @@ def main():
     thread2 = threading.Thread(target=record_input, daemon=True)
     thread2.start()
 
-    gui = GUI()
+    gui = Gui()
     gui.mainloop()
 
 def create_files():
@@ -175,26 +175,36 @@ def process_data():
     
     record_input()
 
-class GUI(tk.Tk):
+class Gui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Screentime")
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
+        tabs = GuiTabs()
+        tabs.grid(column=0, row=0)
+
+class GuiTabs(ttk.Notebook):
+    def __init__(self):
+        super().__init__()
+        frame0 = ttk.Frame(self)
+        text = tk.Text(frame0)
+        text.insert("1.0", "Home")
+        text.pack()
+        self.add(frame0, text="Home")
         frame = GraphFrame(self, "Time data")
-        frame.grid(column=0, row=0)
-
+        self.add(frame, text="Time data")
         frame2 = GraphFrame(self, "Mouse data")
-        frame2.grid(column=1, row=0)
-
+        self.add(frame2, text="Mouse data")
         frame3 = GraphFrame(self, "Keyboard data")
-        frame3.grid(column=2, row=0)
+        self.add(frame3, text="Keyboard data")
 
 class GraphFrame(ttk.Frame):
     def __init__(self, parent, name):
         super().__init__(parent)
 
+        
         self.name = name
 
         self.fig = Figure(figsize=(5, 5), dpi=100)
@@ -204,9 +214,13 @@ class GraphFrame(ttk.Frame):
         self.toolbar = NavigationToolbar2Tk(self.canvas, self)
         self.toolbar.update()
 
-        self.plot_btn = ttk.Button(self, text  = "Plot", command = self.plot_data)
+        
 
-        self.plot_btn.pack(side=tk.BOTTOM)
+        # self.refresh_icon =  tk.PhotoImage(file=img)
+
+        self.plot_btn = ttk.Button(self, text="Plot", command=self.plot_data)
+
+        self.plot_btn.pack(side=tk.BOTTOM, ipadx=5, ipady=5)
         self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
         self.canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
 
