@@ -2,11 +2,7 @@ import ctypes
 import psutil
 import time
 import datetime
-from datetime import timedelta
 import atexit
-import json
-import matplotlib
-from matplotlib import colormaps
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import tkinter as tk
@@ -17,7 +13,6 @@ import os
 import mouse
 import threading
 import seaborn as sns
-from PIL import Image, ImageTk
 import storage
 import utils
 
@@ -46,11 +41,6 @@ def get_date_str():
     date_str = current_date.strftime("%d/%m/%Y")
     return date_str
 
-def get_tomorrow_date():
-    tomorrow_date = datetime.date.today() + timedelta(1)
-    tomorrowdatestr = tomorrow_date.strftime("%d/%m/%y")
-    return tomorrowdatestr
-
 def check_date():
 
     user_data = utils.load_json("user_data.json")
@@ -59,37 +49,25 @@ def check_date():
     if get_date_str() != last_date:
         utils.clear_json("time_data.json")
         utils.clear_json("mouse_data.json")
-        utils.clear_json("kb_data.json")
+        utils.clear_json("key_counter.json")
         user_data["current_date"] = get_date_str()
         utils.save_json(user_data, "user_data.json")
     else:
         user_data["current_date"] = get_date_str()
 
 def record_time():
-    creation_time = time.time()
-    current_exe = get_foreground_exe()
-    start_time = creation_time
+    t = time.time()
+    start_time = t
+    last_update = t
+    last_save = t
     update_interval = 1
     save_interval = 300
-    last_update = creation_time
-    last_save = creation_time
 
     while True:
         time_data = storage.time_data
         time.sleep(1)
-        new_exe = get_foreground_exe()
+        current_exe = get_foreground_exe()
         now = time.time()
-        
-
-        if new_exe != current_exe:
-            elapsed_time = now - start_time
-            if current_exe in time_data: 
-                time_data[current_exe] += round(elapsed_time)
-            else:
-                time_data[current_exe] = round(elapsed_time)
-            current_exe = new_exe
-            start_time = now
-            last_update = now
     
         if now - last_update >= update_interval:
             elapsed_time = now - start_time
@@ -103,7 +81,7 @@ def record_time():
         if now - last_save >= save_interval:
             utils.save_json(time_data, "time_data.json")
             utils.save_json(storage.mouse_data, "mouse_data.json")
-            utils.save_json(storage.kb_data, "kb_data.json")
+            utils.save_json(storage.key_counter, "key_countere.json")
             check_date()
             last_save = now
 
@@ -120,8 +98,9 @@ def record_input():
 
 def process_data():
     mouse_data = storage.mouse_data
-    kb_data = storage.kb_data
     key_counter = storage.key_counter
+    buttons = mouse_data["buttons"]
+    
     mouse.unhook_all()
     keyboard.unhook_all()
     for i in mevents:
@@ -150,30 +129,24 @@ def process_data():
                 mouse_data["scroll_ticks"] = 1
         else:
             if i.event_type == 'down' or i.event_type == 'double':
-                if i.button in mouse_data:
-                    mouse_data[i.button] += 1
+                if i.button in buttons:
+                    buttons[i.button] += 1
                 else:
-                    mouse_data[i.button] = 1
+                    buttons[i.button] = 1
+    mouse_data["buttons"] = buttons
 
     for i in kbevents:
-        if i.event_type == 'down':
-            kb_data.append(i.name)
-
-    for i in kb_data:
-        
-        if len(i) != 1:
+        key = i.name
+        if len(key) > 5 and i.event_type != 'down':
             pass
-        elif i in key_counter:
-            key_counter[i] += 1
+        elif key in key_counter:
+            key_counter[key] += 1
         else:
-            key_counter[i] = 1
-
-    json.dumps(kb_data)
+            key_counter[key] = 1
+    
     storage.mouse_data = mouse_data
-    storage.kb_data = kb_data
     storage.key_counter = key_counter
 
-    
     record_input()
 
 class Gui(tk.Tk):
@@ -192,21 +165,23 @@ class GuiTabs(ttk.Notebook):
 
         self.frame0 = ttk.Frame()
         self.add(self.frame0, text="Dashboard")
-        self.combox = ttk.Combobox()
-        self.combox.pack()
-        self.combox['values'] = ['today', 'past week', 'past month']
+        
         
 
-        self.frame01 = GraphFrame(self.frame0, "Home")
+        self.frame01 = GraphFrame(self.frame0, "home")
         self.frame01.pack()
 
-        self.frame = GraphFrame(self, "Apps")
+        self.combox = ttk.Combobox(self.frame01)
+        self.combox.pack()
+        self.combox['values'] = ['today', 'past week', 'past month']
+
+        self.frame = GraphFrame(self, "app")
         self.add(self.frame, text="Apps")
-        self.frame2 = GraphFrame(self, "Mouse")
+        self.frame2 = GraphFrame(self, "mouse")
         self.add(self.frame2, text="Mouse activity")
-        self.frame3 = GraphFrame(self, "Keyboard")
+        self.frame3 = GraphFrame(self, "kb")
         self.add(self.frame3, text="Keyboard activity")
-        self.frame4 = GraphFrame(self, "Network")
+        self.frame4 = GraphFrame(self, "net")
         self.add(self.frame4, text="Network activity")
 
 class GraphFrame(ttk.Frame):
@@ -214,29 +189,58 @@ class GraphFrame(ttk.Frame):
         super().__init__(parent)
 
         self.name = name
-        
+        self.container = ttk.Frame(self)
+
+        self.frame = ttk.Frame(self.container, padding=5)
         self.fig = Figure()
         self.graph = self.fig.add_subplot()
 
-        self.canvas = FigureCanvasTkAgg(figure=self.fig, master = self)
-        self.toolbar = NavigationToolbar2Tk(self.canvas, self)
+        self.canvas = FigureCanvasTkAgg(figure=self.fig, master = self.frame)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self.frame)
         self.toolbar.update()
 
         self.plot_btn = ttk.Button(self, text="Plot", command=self.plot_data)
 
-        self.plot_btn.pack(side=tk.BOTTOM, ipadx=5, ipady=5)
+        self.plot_btn.pack(anchor=NW, ipadx=5, ipady=5)
+        self.container.pack(side=tk.TOP)
+        self.frame.pack(side=tk.LEFT)
         self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.canvas.get_tk_widget().pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True)
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+        if self.name == "mouse":
+
+            self.frame2 = ttk.Frame(self.container, padding=5)
+
+            self.fig2 = Figure()
+            self.graph2 = self.fig2.add_subplot()
+            
+            self.canvas2 = FigureCanvasTkAgg(figure=self.fig2, master = self.frame2)
+            self.toolbar2 = NavigationToolbar2Tk(self.canvas2, self.frame2)
+            self.toolbar2.update()
+            self.canvas2.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+            self.frame2.pack(side=tk.LEFT)
+
+            self.frame3 = ttk.Frame(self.container, padding=5)
+
+            self.fig3 = Figure()
+            self.graph3 = self.fig3.add_subplot()
+
+            self.canvas3 = FigureCanvasTkAgg(figure=self.fig3, master = self.frame3)
+            self.toolbar3 = NavigationToolbar2Tk(self.canvas3, self.frame3)
+            self.toolbar3.update()
+            self.canvas3.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+            self.frame3.pack(side=tk.LEFT)
 
     def plot_data(self):
         program_names = storage.program_names
         time_data = storage.time_data
-        if self.name == "Home":
+        if self.name == "home":
             self.graph.clear()
             final_data = {}
             for tkey, tvalue in time_data.items():
                 app = os.path.basename(tkey).lower()
                 app =  os.path.splitext(app)[0].lower()
+                print(app)
                 if app in program_names:
                     app = program_names[app]
                     final_data[app] = final_data.get(app, 0) + round(tvalue/60, 2)
@@ -244,10 +248,10 @@ class GraphFrame(ttk.Frame):
                     final_data[app.title()] = final_data.get(app, 0) + round(tvalue/60, 2)
             keys = list(final_data.keys())
             values = list(final_data.values())
-            self.graph.pie(x=values, labels=keys, colors=sns.color_palette("pastel6"))
+            self.graph.pie(x=values, labels=keys)
             self.canvas.draw()
 
-        elif self.name == "Apps":
+        elif self.name == "app":
             self.graph.clear()
             final_data = {}
             for tkey, tvalue in time_data.items():
@@ -263,16 +267,26 @@ class GraphFrame(ttk.Frame):
             self.graph.bar(tkeys, tvalues, color="cyan")
             self.canvas.draw()
 
-        elif self.name == "Mouse":
+        elif self.name == "mouse":
             mouse_data = storage.mouse_data
             process_data()
             self.graph.clear()
-            mkeys = list(mouse_data.keys())
-            mvalues = list(mouse_data.values())
+            mkeys = list(mouse_data["buttons"].keys())
+            mvalues = list(mouse_data["buttons"].values())
             self.graph.pie(x=mvalues, labels=mkeys)
             self.canvas.draw()
 
-        elif self.name == "Keyboard":
+            self.graph2.clear()
+            distance = mouse_data["distance"]
+            self.graph2.bar("Distance (pixels)", distance)
+            self.canvas2.draw()
+
+            self.graph3.clear()
+            ticks = mouse_data["scroll_ticks"]
+            self.graph3.bar("Scroll", ticks)
+            self.canvas3.draw()
+
+        elif self.name == "kb":
             key_counter = storage.key_counter
             process_data()
             self.graph.clear()
@@ -281,15 +295,14 @@ class GraphFrame(ttk.Frame):
             kbvalues = list(sorted_key_counter.values())
             kbkeys = [x.upper() for x in kbkeys]
             self.graph.bar(kbkeys, kbvalues, color="purple")
-            storage.key_counter.clear()
-            self.canvas.draw() 
+            self.canvas.draw()
         else:
             return None
 
 def save_all():
     utils.save_json(storage.time_data, "time_data.json")
     utils.save_json(storage.mouse_data, "mouse_data.json")
-    utils.save_json(storage.kb_data, "kb_data.json")
+    utils.save_json(storage.key_counter, "key_counter.json")
     print(">Data saved\n>Exiting...")
 
 def exit_handler():
