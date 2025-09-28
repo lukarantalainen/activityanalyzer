@@ -19,9 +19,9 @@ import threading
 import seaborn as sns
 from PIL import Image, ImageTk
 import storage
+import utils
 
 def main():
-    create_files()
     check_date()
 
     thread1 = threading.Thread(target=record_time, daemon=True)
@@ -31,34 +31,6 @@ def main():
 
     gui = Gui()
     gui.mainloop()
-
-def create_files():
-    if not os.path.exists("time_data.json"):
-        with open("time_data.json", "w") as f:
-            json.dump({}, f)
-    if not os.path.exists("user_data.json"):
-        with open("user_data.json", "w") as f:
-            json.dump({}, f)
-    if not os.path.exists("kb_data.json"):
-        with open("kb_data.json", "w") as f:
-            json.dump({}, f)
-    if not os.path.exists("mouse_data.json"):
-        with open("mouse_data.json", "w") as f:
-            json.dump({}, f)
-    if not os.path.exists("program_names.json"):
-        with open("prorgram_names.json", "w") as f:
-            json.dump({"chrome": "Google Chrome", "msedge": "Microsoft Edge", "firefox": "Mozilla Firefox", "code": "Visual Studio Code", "notepad++": "Notepad++", "spotify": "Spotify", "discord": "Discord", "slack": "Slack", "teams": "Microsoft Teams", "word": "Microsoft Word", "excel": "Microsoft Excel", "powerpnt": "Microsoft PowerPoint", "outlook": "Microsoft Outlook", "zoom": "Zoom", "skype": "Skype", "vlc": "VLC Media Player", "steam": "Steam", "null": "Sleep", "taskmgr": "Task Manager", "lockapp": "Lockscreen", "cs2": "Counter-Strike 2", "steamwebhelper": "Steam overlay", "explorer": "File Explorer"}, f)
-
-def clear_json(path):
-    with open(path, "w") as f:
-        json.dump({}, f)
-
-def save_json(data, path):
-    try:
-            with open(path, "w") as f:
-                json.dump(data, f)
-    except Exception as e:
-        print(e)
 
 def get_foreground_exe():
     try:
@@ -80,15 +52,16 @@ def get_tomorrow_date():
     return tomorrowdatestr
 
 def check_date():
-    with open("user_data.json", "r") as f:
-        user_data = json.load(f)
+
+    user_data = utils.load_json("user_data.json")
     last_date = user_data["current_date"]
+
     if get_date_str() != last_date:
-        clear_json("time_data.json")
-        clear_json("mouse_data.json")
-        clear_json("kb_data.json")
+        utils.clear_json("time_data.json")
+        utils.clear_json("mouse_data.json")
+        utils.clear_json("kb_data.json")
         user_data["current_date"] = get_date_str()
-        save_json(user_data, "user_data.json")
+        utils.save_json(user_data, "user_data.json")
     else:
         user_data["current_date"] = get_date_str()
 
@@ -128,7 +101,9 @@ def record_time():
             last_update = now
 
         if now - last_save >= save_interval:
-            save_json(time_data, "time_data.json")
+            utils.save_json(time_data, "time_data.json")
+            utils.save_json(storage.mouse_data, "mouse_data.json")
+            utils.save_json(storage.kb_data, "kb_data.json")
             check_date()
             last_save = now
 
@@ -149,12 +124,30 @@ def process_data():
     key_counter = storage.key_counter
     mouse.unhook_all()
     keyboard.unhook_all()
-
     for i in mevents:
         if type(i) == mouse._mouse_event.MoveEvent:
-            pass
+            x1 = i.x
+            y1 = i.y
+            break
+
+    for i in mevents:
+        
+        if type(i) == mouse._mouse_event.MoveEvent:
+            x2 = i.x
+            y2 = i.y
+            try:
+                mouse_data["distance"] += (abs(x1-x2)+abs(y1-y2))
+            except KeyError:
+                mouse_data["distance"] = (abs(x1-x2)+abs(y1-y2))
+
+            x1 = x2
+            y1 = y2
+
         elif type(i) == mouse._mouse_event.WheelEvent:
-            print(i)
+            if "scroll_ticks" in mouse_data:
+                mouse_data["scroll_ticks"] += 1
+            else:
+                mouse_data["scroll_ticks"] = 1
         else:
             if i.event_type == 'down' or i.event_type == 'double':
                 if i.button in mouse_data:
@@ -276,7 +269,7 @@ class GraphFrame(ttk.Frame):
             self.graph.clear()
             mkeys = list(mouse_data.keys())
             mvalues = list(mouse_data.values())
-            self.graph.bar(mkeys, mvalues, color="yellow")
+            self.graph.pie(x=mvalues, labels=mkeys)
             self.canvas.draw()
 
         elif self.name == "Keyboard":
@@ -287,17 +280,16 @@ class GraphFrame(ttk.Frame):
             kbkeys = list(sorted_key_counter.keys())
             kbvalues = list(sorted_key_counter.values())
             kbkeys = [x.upper() for x in kbkeys]
-            print(kbkeys)
-            self.graph.stem(kbkeys, kbvalues)
+            self.graph.bar(kbkeys, kbvalues, color="purple")
             storage.key_counter.clear()
             self.canvas.draw() 
         else:
             return None
 
 def save_all():
-    save_json(storage.time_data, "time_data.json")
-    save_json(storage.mouse_data, "mouse_data.json")
-    save_json(storage.kb_data, "kb_data.json")
+    utils.save_json(storage.time_data, "time_data.json")
+    utils.save_json(storage.mouse_data, "mouse_data.json")
+    utils.save_json(storage.kb_data, "kb_data.json")
     print(">Data saved\n>Exiting...")
 
 def exit_handler():
