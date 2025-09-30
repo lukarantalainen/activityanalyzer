@@ -11,4 +11,5 @@ build/
 dist/
 icons/
 venv/
-!program_names.json
+data/
+!init_data.json

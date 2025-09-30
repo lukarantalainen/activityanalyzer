@@ -2,7 +2,6 @@ import atexit
 import ctypes
 import datetime
 import os
-import pathlib
 import time
 
 import keyboard
@@ -15,7 +14,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 
-from config import USER_DATA
+from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA
 import storage
 import tools
 
@@ -71,7 +70,6 @@ def record_time():
 
     while True:
         time_data = storage.time_data
-        time.sleep(1)
         current_exe = get_foreground_exe()
         now = time.time()
     
@@ -90,6 +88,7 @@ def record_time():
             last_save = now
 
         storage.time_data = time_data
+        time.sleep(1)
 
 mevents = []
 kbevents = []
@@ -238,7 +237,8 @@ class GraphFrame(ttk.Frame):
             self.frame3.pack(side=tk.LEFT)
 
     def plot_data(self):
-        program_names = storage.program_names
+        init_data = storage.init_data
+        program_names = init_data
         time_data = storage.time_data
         if self.name == "home":
             self.graph.clear()
@@ -278,7 +278,7 @@ class GraphFrame(ttk.Frame):
             self.graph.clear()
             mkeys = list(mouse_data["buttons"].keys())
             mvalues = list(mouse_data["buttons"].values())
-            self.graph.pie(x=mvalues, labels=mkeys)
+            self.graph.bar(mkeys, mvalues)
             self.canvas.draw()
 
             self.graph2.clear()
@@ -305,9 +305,9 @@ class GraphFrame(ttk.Frame):
             return None
 
 def save_all():
-    tools.save_json(storage.time_data, "time_data.json")
-    tools.save_json(storage.mouse_data, "mouse_data.json")
-    tools.save_json(storage.kb_data, "kb_data.json")
+    tools.save_json(storage.time_data, TIME_DATA)
+    tools.save_json(storage.mouse_data, MOUSE_DATA)
+    tools.save_json(storage.kb_data, KB_DATA)
     print(">Data saved\n>Exiting...")
 
 def exit_handler():

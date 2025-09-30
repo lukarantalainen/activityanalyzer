@@ -1,6 +1,6 @@
 import json
 import os
-from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA, PROGRAM_NAMES
+from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA, INIT_DATA
 
 def create_files():
     if not os.path.exists(USER_DATA):
@@ -15,9 +15,37 @@ def create_files():
     if not os.path.exists(KB_DATA):
         with open(KB_DATA, "w") as f:
             json.dump({}, f)
-    if not os.path.exists(PROGRAM_NAMES):
-        with open(PROGRAM_NAMES, "w") as f:
-            json.dump({"chrome": "Google Chrome", "msedge": "Microsoft Edge", "firefox": "Mozilla Firefox", "code": "Visual Studio Code", "notepad++": "Notepad++", "spotify": "Spotify", "discord": "Discord", "slack": "Slack", "teams": "Microsoft Teams", "word": "Microsoft Word", "excel": "Microsoft Excel", "powerpnt": "Microsoft PowerPoint", "outlook": "Microsoft Outlook", "zoom": "Zoom", "skype": "Skype", "vlc": "VLC Media Player", "steam": "Steam", "null": "Sleep", "taskmgr": "Task Manager", "lockapp": "Lockscreen", "cs2": "Counter-Strike 2", "steamwebhelper": "Steam overlay", "explorer": "File Explorer", "windowsterminal": "Command Prompt", "searchhost": "Windows Search", }, f)
+    if not os.path.exists(INIT_DATA):
+        with open(INIT_DATA, "w") as f:
+            json.dump(
+                {"program_names": {
+                "chrome": "Google Chrome",
+                "msedge": "Microsoft Edge",
+                "firefox": "Mozilla Firefox",
+                "code": "Visual Studio Code",
+                "notepad++": "Notepad++",
+                "spotify": "Spotify",
+                "discord": "Discord",
+                "slack": "Slack",
+                "teams": "Microsoft Teams",
+                "word": "Microsoft Word",
+                "excel": "Microsoft Excel",
+                "powerpnt": "Microsoft PowerPoint",
+                "outlook": "Microsoft Outlook",
+                "zoom": "Zoom",
+                "skype": "Skype",
+                "vlc": "VLC Media Player",
+                "steam": "Steam",
+                "null": "Sleep",
+                "taskmgr": "Task Manager",
+                "lockapp": "Lockscreen",
+                "cs2": "Counter-Strike 2",
+                "steamwebhelper": "Steam overlay",
+                "explorer": "File Explorer",
+                "windowsterminal": "Command Prompt",
+                "searchhost": "Windows Search"}}, f)
+            
+#change "PROGRAM_DATA" -> INIT_DATA
 
 def load_json(path):
     with open(path, "r") as f:
