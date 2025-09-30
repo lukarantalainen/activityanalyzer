@@ -3,7 +3,6 @@ import ctypes
 import datetime
 import os
 import time
-
 import keyboard
 import mouse
 from matplotlib.figure import Figure
@@ -13,7 +12,6 @@ import seaborn as sns
 import threading
 import tkinter as tk
 from tkinter import ttk
-
 from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA
 import storage
 import tools
@@ -131,7 +129,7 @@ def process_data():
             else:
                 mouse_data["scroll_ticks"] = 1
         else:
-            if i.event_type == 'down' or i.event_type == 'double':
+            if i.event_type == "down" or i.event_type == "double":
                 if i.button in buttons:
                     buttons[i.button] += 1
                 else:
@@ -140,7 +138,7 @@ def process_data():
 
     for i in kbevents:
         key = i.name
-        if len(key) > 5 and i.event_type != 'down':
+        if len(key) > 5 and i.event_type != "down":
             pass
         elif key in kb_data:
             kb_data[key] += 1
@@ -178,7 +176,7 @@ class GuiTabs(ttk.Notebook):
 
         self.combox = ttk.Combobox(self.frame01)
         self.combox.pack()
-        self.combox['values'] = ['today', 'past week', 'past month']
+        self.combox["values"] = ["today", "past week", "past month"]
 
         self.frame = GraphFrame(self, "app")
         self.add(self.frame, text="Apps")
