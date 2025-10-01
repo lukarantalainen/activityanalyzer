@@ -1,4 +1,7 @@
 import json
+import ctypes
+import psutil
+import datetime
 import os
 from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA, INIT_DATA
 
@@ -9,6 +12,7 @@ def create_files():
     if not os.path.exists(TIME_DATA):
         with open(TIME_DATA, "w") as f:
             json.dump({}, f)
+            print("creating")
     if not os.path.exists(MOUSE_DATA):
         with open(MOUSE_DATA, "w") as f:
             json.dump({"buttons": {}, "scroll_ticks": 0, "distance": 0}, f)
@@ -44,8 +48,6 @@ def create_files():
                 "explorer": "File Explorer",
                 "windowsterminal": "Command Prompt",
                 "searchhost": "Windows Search"}}, f)
-            
-#change "PROGRAM_DATA" -> INIT_DATA
 
 def load_json(path):
     with open(path, "r") as f:
@@ -53,7 +55,6 @@ def load_json(path):
             return json.load(f)
         except Exception as e:
             print(e)
-            return {}
 
 def clear_json(path):
     with open(path, "w") as f:
@@ -66,8 +67,28 @@ def save_json(data, path):
     except Exception as e:
         print(e)
 
-def reset_all():
-    os.remove("time_data.json")
-    os.remove("mouse_data.json")
-    os.remove("kb_data.json")
-    create_files()
+def get_foreground_exe():
+    try:
+        hwnd = ctypes.windll.user32.GetForegroundWindow()
+        pid = ctypes.wintypes.DWORD()
+        ctypes.windll.user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        return psutil.Process(pid.value).exe()
+    except Exception:
+         return None
+
+def get_date_str():
+    current_date = datetime.date.today()
+    date_str = current_date.strftime("%d/%m/%Y")
+    return date_str
+
+def check_date():
+
+    user_data = load_json(USER_DATA)
+    last_date = user_data["current_date"]
+    current_date = get_date_str()
+
+    if current_date != last_date:
+        user_data["current_date"] = current_date
+        save_json(user_data, USER_DATA)
+    else:
+        user_data["current_date"] = current_date
