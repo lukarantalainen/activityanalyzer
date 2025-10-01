@@ -2,8 +2,6 @@ import os
 
 ROOT_DIR = os.getcwd()
 DATA_DIR = os.path.join(ROOT_DIR, "data")
-if not os.path.exists(DATA_DIR):
-    os.mkdir(DATA_DIR)
 USER_DATA = os.path.join(DATA_DIR, "user_data.json")
 TIME_DATA = os.path.join(DATA_DIR, "time_data.json")
 MOUSE_DATA = os.path.join(DATA_DIR, "mouse_data.json")

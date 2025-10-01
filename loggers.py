@@ -1,15 +1,18 @@
 
-import keyboard
+import keyboard as kb
 import mouse
 import os
 import time
 import tools
 from config import TIME_DATA, MOUSE_DATA, KB_DATA, INIT_DATA
 
+
 time_data = tools.load_json(TIME_DATA)
 mouse_data = tools.load_json(MOUSE_DATA)
 kb_data = tools.load_json(KB_DATA)
 init_data = tools.load_json(INIT_DATA)
+mevents = []
+kbevents = []
 
 def record_time():
     t = time.time()
@@ -20,6 +23,7 @@ def record_time():
     save_interval = 300
 
     while True:
+        print(time_data)
         current_exe = tools.get_foreground_exe()
         now = time.time()
 
@@ -39,6 +43,14 @@ def record_time():
             
         time.sleep(1)
 
+def record_mouse_input():
+    mevents.clear()
+    mouse.hook(mevents.append)
+
+def record_kb_input():
+    kbevents.clear()
+    kb.hook(kbevents.append)
+
 def parse_time_data():
     program_names = init_data
     final_data = {}
@@ -52,20 +64,10 @@ def parse_time_data():
             final_data[app.title()] = final_data.get(app, 0) + round(tvalue/60, 2)
     return final_data
 
-mevents = []
-kbevents = []
+def parse_mouse_data():
 
-def record_input():
-    mevents.clear()
-    kbevents.clear()
-    mouse.hook(mevents.append)
-    keyboard.hook(kbevents.append)
-
-def process_data():
-    buttons = mouse_data["buttons"]
-    
     mouse.unhook_all()
-    keyboard.unhook_all()
+
     for i in mevents:
         if type(i) == mouse._mouse_event.MoveEvent:
             x1 = i.x
@@ -73,45 +75,55 @@ def process_data():
             break
 
     for i in mevents:
-        
         if type(i) == mouse._mouse_event.MoveEvent:
             x2 = i.x
             y2 = i.y
+
             try:
                 mouse_data["distance"] += (abs(x1-x2)+abs(y1-y2))
             except KeyError:
                 mouse_data["distance"] = (abs(x1-x2)+abs(y1-y2))
 
-            x1 = x2
-            y1 = y2
+        elif type(i) == mouse._mouse_event.ButtonEvent:
+            if i.event_type == "down" or i.event_type == "double":
+                buttons = mouse_data["buttons"]
+                try:
+                    buttons[i.name] += 1
+                except KeyError:
+                    buttons[i.name] = 1
+            mouse_data["buttons"] = buttons
 
         elif type(i) == mouse._mouse_event.WheelEvent:
-            if "scroll_ticks" in mouse_data:
+            try:
                 mouse_data["scroll_ticks"] += 1
-            else:
+            except KeyError:
                 mouse_data["scroll_ticks"] = 1
-        else:
-            if i.event_type == "down" or i.event_type == "double":
-                if i.button in buttons:
-                    buttons[i.button] += 1
-                else:
-                    buttons[i.button] = 1
-    mouse_data["buttons"] = buttons
+
+    record_mouse_input()
+    return mouse_data
+
+def parse_kb_data():
+
+    kb.unhook_all()
 
     for i in kbevents:
         key = i.name
-        if len(key) > 5 and i.event_type != "down":
-            pass
-        elif key in kb_data:
+        try:
             kb_data[key] += 1
-        else:
+        except KeyError:
             kb_data[key] = 1
-
-    record_input()
-    return mouse_data, kb_data
+    
+    record_kb_input()
+    return kb_data
 
 def save_all():
     tools.save_json(time_data, TIME_DATA)
     tools.save_json(mouse_data, MOUSE_DATA)
     tools.save_json(kb_data, KB_DATA)
 
+def reset_all():
+    time_data.clear()
+    mouse_data.clear()
+    kb_data.clear()
+    mevents.clear()
+    kbevents.clear()

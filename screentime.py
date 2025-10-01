@@ -1,8 +1,6 @@
 import atexit
-import os
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-import psutil
 # import seaborn as sns
 import threading
 import tkinter as tk
@@ -14,10 +12,9 @@ import tools
 def main():
     tools.check_date()
 
-    thread1 = threading.Thread(target=loggers.record_time, daemon=True)
-    thread1.start()
-    thread2 = threading.Thread(target=loggers.record_input, daemon=True)
-    thread2.start()
+    thread1 = threading.Thread(target=loggers.record_time, daemon=True).start()
+    thread2 = threading.Thread(target=loggers.record_mouse_input, daemon=True).start()
+    thread3 = threading.Thread(target=loggers.record_kb_input, daemon=True).start()
 
     gui = Gui()
     gui.mainloop()
@@ -40,7 +37,7 @@ class GuiTabs(ttk.Notebook):
         self.add(self.frame0, text="Dashboard")
         
         self.frame01 = GraphFrame(self.frame0, "home")
-        self.button = tk.Button(self.frame01, text="Reset all")
+        self.button = tk.Button(self.frame01, text="Reset all", command=loggers.reset_all)
         self.button.pack()
         self.frame01.pack()
 
@@ -123,7 +120,8 @@ class GraphFrame(ttk.Frame):
             self.canvas.draw()
 
         elif self.name == "mouse":
-            mouse_data = loggers.process_data()[0]
+            mouse_data = loggers.parse_mouse_data()
+            print(mouse_data)
             self.graph.clear()
             mkeys = list(mouse_data["buttons"].keys())
             mvalues = list(mouse_data["buttons"].values())
@@ -142,7 +140,7 @@ class GraphFrame(ttk.Frame):
             self.canvas3.draw()
 
         elif self.name == "kb":
-            kb_data = loggers.process_data()[1]
+            kb_data = loggers.parse_kb_data()
             self.graph.clear()
             sorted_kb_data = dict(sorted(kb_data.items()))
             kbkeys = list(sorted_kb_data.keys())

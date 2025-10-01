@@ -3,9 +3,11 @@ import ctypes
 import psutil
 import datetime
 import os
-from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA, INIT_DATA
+from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA, INIT_DATA, DATA_DIR
 
 def create_files():
+    if not os.path.exists(DATA_DIR):
+        os.mkdir(DATA_DIR)
     if not os.path.exists(USER_DATA):
         with open(USER_DATA, "w") as f:
             json.dump({"current_date": 0}, f)
@@ -92,3 +94,9 @@ def check_date():
         save_json(user_data, USER_DATA)
     else:
         user_data["current_date"] = current_date
+
+def delete_data():
+    try:
+        os.rmdir(DATA_DIR)
+    except OSError:
+        create_files()
