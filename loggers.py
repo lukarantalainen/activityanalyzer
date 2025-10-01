@@ -33,7 +33,7 @@ def record_time():
             last_update = now
 
         if now - last_save >= save_interval:
-            tools.save_all()
+            save_all()
             tools.check_date()
             last_save = now
             
@@ -109,3 +109,9 @@ def process_data():
 
     record_input()
     return mouse_data, kb_data
+
+def save_all():
+    tools.save_json(time_data, TIME_DATA)
+    tools.save_json(mouse_data, MOUSE_DATA)
+    tools.save_json(kb_data, KB_DATA)
+

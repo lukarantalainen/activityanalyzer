@@ -3,7 +3,7 @@ import os
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import psutil
-import seaborn as sns
+# import seaborn as sns
 import threading
 import tkinter as tk
 from tkinter import ttk
@@ -151,16 +151,11 @@ class GraphFrame(ttk.Frame):
             self.graph.bar(kbkeys, kbvalues, color="purple")
             self.canvas.draw()
         else:
-            return None
-
-def save_all():
-    tools.save_json(loggers.parse_time_data(), TIME_DATA)
-    tools.save_json(loggers.process_data()[0], MOUSE_DATA)
-    tools.save_json(loggers.process_data()[1], KB_DATA)
-    print(">Data saved\n>Exiting...")
+            return None    
 
 def exit_handler():
-    save_all()
+    loggers.save_all()
+    print(">Data saved\n>Exiting...")
     return None
 atexit.register(exit_handler)
 
