@@ -7,4 +7,3 @@ TIME_DATA = os.path.join(DATA_DIR, "time_data.json")
 MOUSE_DATA = os.path.join(DATA_DIR, "mouse_data.json")
 KB_DATA = os.path.join(DATA_DIR, "kb_data.json")
 INIT_DATA = os.path.join(DATA_DIR, "init_data.json")
-

@@ -14,10 +14,9 @@ def create_files():
     if not os.path.exists(TIME_DATA):
         with open(TIME_DATA, "w") as f:
             json.dump({}, f)
-            print("creating")
     if not os.path.exists(MOUSE_DATA):
         with open(MOUSE_DATA, "w") as f:
-            json.dump({"buttons": {}, "scroll_ticks": 0, "distance": 0}, f)
+            json.dump({}, f)
     if not os.path.exists(KB_DATA):
         with open(KB_DATA, "w") as f:
             json.dump({}, f)
@@ -94,9 +93,4 @@ def check_date():
         save_json(user_data, USER_DATA)
     else:
         user_data["current_date"] = current_date
-
-def delete_data():
-    try:
-        os.rmdir(DATA_DIR)
-    except OSError:
-        create_files()
+        

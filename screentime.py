@@ -1,11 +1,10 @@
 import atexit
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
-# import seaborn as sns
+import plotly.express as px
 import threading
 import tkinter as tk
 from tkinter import ttk
-from config import USER_DATA, TIME_DATA, MOUSE_DATA, KB_DATA, INIT_DATA
 import loggers
 import tools
 
@@ -23,8 +22,7 @@ class Gui(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Screen time")
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
+        self.geometry("500x500")
 
         tabs = GuiTabs(self)
         tabs.pack()
@@ -37,8 +35,6 @@ class GuiTabs(ttk.Notebook):
         self.add(self.frame0, text="Dashboard")
         
         self.frame01 = GraphFrame(self.frame0, "home")
-        self.button = tk.Button(self.frame01, text="Reset all", command=loggers.reset_all)
-        self.button.pack()
         self.frame01.pack()
 
         self.combox = ttk.Combobox(self.frame01)
@@ -54,15 +50,17 @@ class GuiTabs(ttk.Notebook):
         self.frame4 = GraphFrame(self, "net")
         self.add(self.frame4, text="Network activity")
 
+        self.frame5 = ttk.Frame()
+        self.add(self.frame5, text="Settings")
+
 class GraphFrame(ttk.Frame):
     def __init__(self, parent, name):
         super().__init__(parent)
 
         self.name = name
-        self.container = ttk.Frame(self)
 
-        self.frame = ttk.Frame(self.container, padding=5)
-        self.fig = Figure()
+        self.frame = ttk.Frame(self, padding=5)
+        self.fig = Figure(layout="compressed")
         self.graph = self.fig.add_subplot()
 
         self.canvas = FigureCanvasTkAgg(figure=self.fig, master = self.frame)
@@ -71,35 +69,15 @@ class GraphFrame(ttk.Frame):
 
         self.plot_btn = ttk.Button(self, text="Plot", command=self.plot_data)
 
-        self.plot_btn.pack(anchor=tk.NW, ipadx=5, ipady=5)
-        self.container.pack(side=tk.TOP)
+        self.plot_btn.pack(ipadx=5, ipady=5)
         self.frame.pack(side=tk.LEFT)
         self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
         if self.name == "mouse":
-
-            self.frame2 = ttk.Frame(self.container, padding=5)
-
-            self.fig2 = Figure()
-            self.graph2 = self.fig2.add_subplot()
-            
-            self.canvas2 = FigureCanvasTkAgg(figure=self.fig2, master = self.frame2)
-            self.toolbar2 = NavigationToolbar2Tk(self.canvas2, self.frame2)
-            self.toolbar2.update()
-            self.canvas2.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-            self.frame2.pack(side=tk.LEFT)
-
-            self.frame3 = ttk.Frame(self.container, padding=5)
-
-            self.fig3 = Figure()
-            self.graph3 = self.fig3.add_subplot()
-
-            self.canvas3 = FigureCanvasTkAgg(figure=self.fig3, master = self.frame3)
-            self.toolbar3 = NavigationToolbar2Tk(self.canvas3, self.frame3)
-            self.toolbar3.update()
-            self.canvas3.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-            self.frame3.pack(side=tk.LEFT)
+            self.text1 = tk.Text(self)
+            self.text1.insert(index="end", chars="HI")
+            self.text1.pack()
 
     def plot_data(self):
         time_data = loggers.parse_time_data()
@@ -111,6 +89,9 @@ class GraphFrame(ttk.Frame):
             self.graph.pie(x=values, labels=keys)
             self.canvas.draw()
 
+            pxfig = px.bar(time_data, x=keys, y=values)
+            threading.Thread(target=pxfig.show).start()
+
         elif self.name == "app":
             self.graph.clear()
             time_data = loggers.parse_time_data()
@@ -121,23 +102,12 @@ class GraphFrame(ttk.Frame):
 
         elif self.name == "mouse":
             mouse_data = loggers.parse_mouse_data()
-            print(mouse_data)
             self.graph.clear()
-            mkeys = list(mouse_data["buttons"].keys())
             mvalues = list(mouse_data["buttons"].values())
-            self.graph.bar(mkeys, mvalues)
+            labels = [f"{k.capitalize()} {str(v)}" for k , v in mouse_data["buttons"].items()]
+            self.graph.pie(x=mvalues, labels=labels)
             self.canvas.draw()
 
-            self.graph2.clear()
-            distance = mouse_data["distance"]
-            self.graph2.bar("Distance (pixels)", distance)
-            self.canvas2.draw()
-
-            self.graph3.clear()
-            ticks = mouse_data["scroll_ticks"]
-            print(ticks)
-            self.graph3.bar("Scroll", ticks)
-            self.canvas3.draw()
 
         elif self.name == "kb":
             kb_data = loggers.parse_kb_data()

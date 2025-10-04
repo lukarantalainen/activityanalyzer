@@ -6,6 +6,7 @@ import time
 import tools
 from config import TIME_DATA, MOUSE_DATA, KB_DATA, INIT_DATA
 
+tools.create_files()
 
 time_data = tools.load_json(TIME_DATA)
 mouse_data = tools.load_json(MOUSE_DATA)
@@ -23,7 +24,6 @@ def record_time():
     save_interval = 300
 
     while True:
-        print(time_data)
         current_exe = tools.get_foreground_exe()
         now = time.time()
 
@@ -68,6 +68,9 @@ def parse_mouse_data():
 
     mouse.unhook_all()
 
+    if not "scroll_ticks" in mouse_data:
+        mouse_data["scroll_ticks"] = 0
+
     for i in mevents:
         if type(i) == mouse._mouse_event.MoveEvent:
             x1 = i.x
@@ -76,28 +79,27 @@ def parse_mouse_data():
 
     for i in mevents:
         if type(i) == mouse._mouse_event.MoveEvent:
+            distance = mouse_data.get("distance", 0)
             x2 = i.x
             y2 = i.y
 
-            try:
-                mouse_data["distance"] += (abs(x1-x2)+abs(y1-y2))
-            except KeyError:
-                mouse_data["distance"] = (abs(x1-x2)+abs(y1-y2))
+            distance += (abs(x1-x2)+abs(y1-y2))
+            x1 = x2
+            y1 = y2
+            mouse_data["distance"] = distance
 
         elif type(i) == mouse._mouse_event.ButtonEvent:
             if i.event_type == "down" or i.event_type == "double":
-                buttons = mouse_data["buttons"]
-                try:
-                    buttons[i.name] += 1
-                except KeyError:
-                    buttons[i.name] = 1
-            mouse_data["buttons"] = buttons
+                buttons = mouse_data.get("buttons", {})
+                button = buttons.get(i.button, 0)
+                button += 1
+                buttons[i.button] = button
+                mouse_data["buttons"] = buttons
 
         elif type(i) == mouse._mouse_event.WheelEvent:
-            try:
-                mouse_data["scroll_ticks"] += 1
-            except KeyError:
-                mouse_data["scroll_ticks"] = 1
+                scroll_ticks = mouse_data.get("scroll_ticks", 0)
+                scroll_ticks += 1
+                mouse_data["scroll_ticks"] = scroll_ticks
 
     record_mouse_input()
     return mouse_data
@@ -120,10 +122,3 @@ def save_all():
     tools.save_json(time_data, TIME_DATA)
     tools.save_json(mouse_data, MOUSE_DATA)
     tools.save_json(kb_data, KB_DATA)
-
-def reset_all():
-    time_data.clear()
-    mouse_data.clear()
-    kb_data.clear()
-    mevents.clear()
-    kbevents.clear()
